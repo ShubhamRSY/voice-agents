@@ -1,0 +1,59 @@
+agents:
+  voice_support:
+    name: "Voice Support Agent"
+    channel: voice
+    llm_provider: openai
+    llm_model: gpt-4o-mini
+    temperature: 0.3
+    max_tokens: 512
+    containment_target: 0.75
+    tools:
+      - lookup_customer
+      - search_knowledge_base
+      - create_ticket
+      - transfer_to_human
+    telephony:
+      greeting: "Hello, thank you for calling Acme Support. How can I help you today?"
+      fallback_message: "I'm having trouble understanding. Let me connect you with a specialist."
+      max_silence_seconds: 5
+      transfer_number: "+15551234567"
+
+  chat_support:
+    name: "Chat Support Agent"
+    channel: chat
+    llm_provider: openai
+    llm_model: gpt-4o-mini
+    temperature: 0.4
+    max_tokens: 1024
+    containment_target: 0.80
+    tools:
+      - lookup_customer
+      - search_knowledge_base
+      - create_ticket
+      - update_crm
+
+  copilot:
+    name: "Agent Copilot"
+    channel: copilot
+    llm_provider: openai
+    llm_model: gpt-4o-mini
+    temperature: 0.2
+    max_tokens: 2048
+    tools:
+      - search_knowledge_base
+      - draft_response
+      - summarize_conversation
+
+rag:
+  chunk_size: 512
+  chunk_overlap: 64
+  top_k: 5
+  score_threshold: 0.7
+
+evaluation:
+  metrics:
+    - containment_rate
+    - avg_response_time_ms
+    - tool_accuracy
+    - hallucination_rate
+  test_suite: tests/evaluation/test_cases.json

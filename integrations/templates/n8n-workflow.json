@@ -1,0 +1,97 @@
+{
+  "name": "Voice Agents → CRM + Slack (Example)",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "voice-agents-events",
+        "options": {}
+      },
+      "id": "Webhook",
+      "name": "Webhook (Catch Event)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [260, 240]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json[\"body\"][\"event\"]}}",
+              "operation": "equals",
+              "value2": "ticket.created"
+            }
+          ]
+        }
+      },
+      "id": "IfTicketCreated",
+      "name": "IF ticket.created",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [520, 240]
+    },
+    {
+      "parameters": {
+        "url": "https://example-crm.local/api/tickets",
+        "method": "POST",
+        "jsonParameters": true,
+        "options": {},
+        "bodyParametersJson": "={{JSON.stringify($json.body.data)}}"
+      },
+      "id": "CreateTicketInCRM",
+      "name": "HTTP Request (Create Ticket)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [780, 160]
+    },
+    {
+      "parameters": {
+        "url": "https://hooks.slack.com/services/XXX/YYY/ZZZ",
+        "method": "POST",
+        "jsonParameters": true,
+        "options": {},
+        "bodyParametersJson": "={\"text\": \"New agent event: {{$json.body.event}}\\nSession: {{$json.body.data.session_id || 'n/a'}}\"}"
+      },
+      "id": "SlackNotify",
+      "name": "Slack Webhook (Notify)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [780, 320]
+    }
+  ],
+  "connections": {
+    "Webhook (Catch Event)": {
+      "main": [
+        [
+          {
+            "node": "IF ticket.created",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF ticket.created": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request (Create Ticket)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Slack Webhook (Notify)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {},
+  "versionId": "template"
+}
+

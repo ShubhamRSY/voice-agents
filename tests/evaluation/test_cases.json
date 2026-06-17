@@ -1,0 +1,45 @@
+{
+  "test_cases": [
+    {
+      "id": "billing_payment_method",
+      "agent_id": "chat_support",
+      "input": "How do I update my credit card on file?",
+      "expected_tools": ["search_knowledge_base"],
+      "expected_keywords": ["billing", "payment"],
+      "should_contain": true
+    },
+    {
+      "id": "password_reset",
+      "agent_id": "chat_support",
+      "input": "I forgot my password and can't log in",
+      "expected_tools": ["search_knowledge_base"],
+      "expected_keywords": ["reset", "password"],
+      "should_contain": true
+    },
+    {
+      "id": "customer_lookup",
+      "agent_id": "chat_support",
+      "input": "Can you look up my account? My email is jane@example.com",
+      "expected_tools": ["lookup_customer"],
+      "expected_keywords": ["Jane"],
+      "should_contain": true,
+      "customer_info": "jane@example.com"
+    },
+    {
+      "id": "escalation",
+      "agent_id": "voice_support",
+      "input": "I've been trying to fix this for weeks and nothing works. I need to speak to a manager right now.",
+      "expected_tools": ["transfer_to_human"],
+      "expected_keywords": ["transfer", "specialist"],
+      "should_contain": true
+    },
+    {
+      "id": "api_troubleshooting",
+      "agent_id": "chat_support",
+      "input": "My API calls are returning 403 errors",
+      "expected_tools": ["search_knowledge_base"],
+      "expected_keywords": ["403", "API"],
+      "should_contain": true
+    }
+  ]
+}
