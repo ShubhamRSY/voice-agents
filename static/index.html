@@ -438,7 +438,7 @@
 
     .field + .field { margin-top: 1rem; }
 
-    select, input[type="text"] {
+    select, input[type="text"], input[type="password"], input[type="url"] {
       width: 100%;
       padding: 0.65rem 0.85rem;
       background: var(--surface-2);
@@ -447,7 +447,7 @@
       color: var(--text);
       font-size: 0.875rem;
       font-family: inherit;
-      transition: border-color var(--transition), box-shadow var(--transition);
+      transition: border-color var(--transition), box-shadow var(--transition), background var(--transition);
     }
     select:focus, input:focus, textarea:focus {
       outline: none;
@@ -460,10 +460,28 @@
       gap: 0.35rem;
     }
     @media (min-width: 900px) {
-      .sidebar .tabs { display: flex; }
+      .menu-btn { display: none; }
+      .app-shell:not(.sidebar-open) .menu-btn { display: flex; }
+      .sidebar {
+        transition: margin-left 0.32s cubic-bezier(0.4, 0, 0.2, 1),
+                    opacity 0.24s ease,
+                    transform 0.32s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      .app-shell:not(.sidebar-open) .sidebar {
+        margin-left: calc(-1 * var(--sidebar-w));
+        opacity: 0;
+        pointer-events: none;
+      }
+      .sidebar-overlay { display: none !important; }
     }
     @media (max-width: 899px) {
       .sidebar .tabs { display: none; }
+      .app-shell:not(.sidebar-open) .sidebar {
+        transform: translateX(-100%);
+      }
+      .app-shell.sidebar-open .sidebar {
+        transform: translateX(0);
+      }
     }
 
     .tab {
@@ -633,6 +651,80 @@
     .field input.integration-input {
       font-family: ui-monospace, monospace;
       font-size: 0.78rem;
+      background: rgba(8, 10, 18, 0.92);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: var(--text);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+    }
+    .field input.integration-input::placeholder {
+      color: var(--text-muted);
+      font-family: var(--font);
+      font-size: 0.78rem;
+    }
+    .field input.integration-input:-webkit-autofill,
+    .field input.integration-input:-webkit-autofill:hover,
+    .field input.integration-input:-webkit-autofill:focus {
+      -webkit-box-shadow: 0 0 0 1000px rgba(8, 10, 18, 0.98) inset;
+      -webkit-text-fill-color: var(--text);
+      caret-color: var(--text);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+    }
+
+    .confirm-dialog {
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.25rem;
+    }
+    .confirm-dialog[hidden] { display: none !important; }
+    .confirm-dialog-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.62);
+      backdrop-filter: blur(4px);
+    }
+    .confirm-dialog-card {
+      position: relative;
+      width: min(100%, 400px);
+      padding: 1.35rem 1.35rem 1.1rem;
+      border-radius: var(--radius-lg);
+      background: var(--glass);
+      border: 1px solid var(--border-strong);
+      box-shadow: var(--shadow);
+      animation: fadeUp 0.22s ease;
+    }
+    .confirm-dialog-card h3 {
+      margin: 0 0 0.55rem;
+      font-size: 1.05rem;
+      color: var(--text);
+    }
+    .confirm-dialog-card p {
+      margin: 0 0 1.1rem;
+      font-size: 0.86rem;
+      line-height: 1.55;
+      color: var(--text-secondary);
+    }
+    .confirm-dialog-actions {
+      display: flex;
+      gap: 0.55rem;
+      justify-content: flex-end;
+    }
+    .confirm-dialog-actions .btn {
+      width: auto;
+      min-width: 5.5rem;
+      padding: 0.6rem 1rem;
+    }
+    .btn-danger {
+      background: rgba(239, 68, 68, 0.18);
+      color: #fecaca;
+      border: 1px solid rgba(248, 113, 113, 0.45);
+    }
+    .btn-danger:hover:not(:disabled) {
+      background: rgba(239, 68, 68, 0.28);
+      color: #fff;
     }
 
     .btn {
@@ -1732,7 +1824,7 @@
     <span id="connectionBannerText">Connection lost — retrying…</span>
   </div>
 
-  <div class="app-shell">
+  <div class="app-shell sidebar-open" id="appShell">
     <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
     <aside class="sidebar" id="sidebar">
@@ -1821,7 +1913,7 @@
             </div>
             <div class="integration-inline-actions">
               <button type="button" class="integration-action-btn" data-action="change" data-provider="openai">Change</button>
-              <button type="button" class="integration-action-btn danger" data-action="delete" data-keys="openai_api_key">Remove</button>
+              <button type="button" class="integration-action-btn danger" data-action="delete" data-keys="openai_api_key" data-remove-label="OpenAI API key">Remove</button>
             </div>
           </div>
           <div class="integration-edit" id="editOpenAI">
@@ -1844,7 +1936,7 @@
             </div>
             <div class="integration-inline-actions">
               <button type="button" class="integration-action-btn" data-action="change" data-provider="anthropic">Change</button>
-              <button type="button" class="integration-action-btn danger" data-action="delete" data-keys="anthropic_api_key">Remove</button>
+              <button type="button" class="integration-action-btn danger" data-action="delete" data-keys="anthropic_api_key" data-remove-label="Anthropic API key">Remove</button>
             </div>
           </div>
           <div class="integration-edit" id="editAnthropic">
@@ -1867,7 +1959,7 @@
             </div>
             <div class="integration-inline-actions">
               <button type="button" class="integration-action-btn" data-action="change" data-provider="twilio">Change</button>
-              <button type="button" class="integration-action-btn danger" data-action="delete" data-keys="twilio_account_sid,twilio_auth_token,twilio_phone_number,twilio_webhook_base_url">Remove</button>
+              <button type="button" class="integration-action-btn danger" data-action="delete" data-keys="twilio_account_sid,twilio_auth_token,twilio_phone_number,twilio_webhook_base_url" data-remove-label="Twilio credentials">Remove</button>
             </div>
           </div>
           <div class="integration-edit" id="editTwilio">
@@ -1890,7 +1982,7 @@
             </div>
             <div class="integration-inline-actions">
               <button type="button" class="integration-action-btn" data-action="change" data-provider="hubspot">Change</button>
-              <button type="button" class="integration-action-btn danger" data-action="delete" data-keys="hubspot_api_key">Remove</button>
+              <button type="button" class="integration-action-btn danger" data-action="delete" data-keys="hubspot_api_key" data-remove-label="HubSpot API key">Remove</button>
             </div>
           </div>
           <div class="integration-edit" id="editHubspot">
@@ -1913,7 +2005,7 @@
             </div>
             <div class="integration-inline-actions">
               <button type="button" class="integration-action-btn" data-action="change" data-provider="ipaas">Change</button>
-              <button type="button" class="integration-action-btn danger" data-action="delete-webhook" data-event="conversation.started">Remove</button>
+              <button type="button" class="integration-action-btn danger" data-action="delete-webhook" data-event="conversation.started" data-remove-label="n8n/Zapier webhook">Remove</button>
             </div>
           </div>
           <div class="integration-edit" id="editIpaas">
@@ -1928,7 +2020,7 @@
               </div>
               <div class="integration-inline-actions">
                 <button type="button" class="integration-action-btn" data-action="change-signing">Change</button>
-                <button type="button" class="integration-action-btn danger" data-action="delete" data-keys="webhook_signing_secret">Remove</button>
+                <button type="button" class="integration-action-btn danger" data-action="delete" data-keys="webhook_signing_secret" data-remove-label="webhook signing secret">Remove</button>
               </div>
             </div>
             <div class="field" id="webhookSigningField">
@@ -2017,6 +2109,18 @@
         </div>
       </div>
     </main>
+  </div>
+
+  <div class="confirm-dialog" id="confirmDialog" hidden>
+    <div class="confirm-dialog-backdrop" id="confirmDialogBackdrop"></div>
+    <div class="confirm-dialog-card" role="alertdialog" aria-labelledby="confirmDialogTitle" aria-describedby="confirmDialogMessage">
+      <h3 id="confirmDialogTitle">Remove integration?</h3>
+      <p id="confirmDialogMessage">This will permanently delete the saved credential from the encrypted vault.</p>
+      <div class="confirm-dialog-actions">
+        <button type="button" class="btn btn-ghost" id="confirmDialogCancel">Cancel</button>
+        <button type="button" class="btn btn-danger" id="confirmDialogConfirm">Remove</button>
+      </div>
+    </div>
   </div>
 
   <div class="toast-stack" id="toastStack" aria-live="polite"></div>
@@ -2496,8 +2600,10 @@
 
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('sidebarOverlay');
+    const appShell = document.getElementById('appShell');
 
     function openSidebar() {
+      appShell?.classList.add('sidebar-open');
       sidebar.classList.add('open');
       overlay.classList.add('open');
       if (window.matchMedia('(max-width: 899px)').matches) {
@@ -2505,19 +2611,36 @@
       }
     }
     function closeSidebar() {
+      appShell?.classList.remove('sidebar-open');
       sidebar.classList.remove('open');
       overlay.classList.remove('open');
       document.body.style.overflow = '';
     }
 
     document.getElementById('menuBtn').addEventListener('click', () => {
-      sidebar.classList.contains('open') ? closeSidebar() : openSidebar();
+      appShell?.classList.contains('sidebar-open') ? closeSidebar() : openSidebar();
     });
     overlay.addEventListener('click', closeSidebar);
 
-    window.addEventListener('resize', () => {
-      if (window.innerWidth >= 900) closeSidebar();
+    document.querySelector('.main')?.addEventListener('click', () => {
+      if (appShell?.classList.contains('sidebar-open')) {
+        closeSidebar();
+      }
     });
+
+    window.addEventListener('resize', () => {
+      if (window.innerWidth >= 900) {
+        overlay.classList.remove('open');
+        document.body.style.overflow = '';
+        if (!appShell?.classList.contains('sidebar-open')) {
+          appShell?.classList.add('sidebar-open');
+        }
+      }
+    });
+
+    if (window.innerWidth < 900) {
+      appShell?.classList.remove('sidebar-open');
+    }
 
     function setActiveTabs(newMode) {
       document.querySelectorAll('.tab[data-mode]').forEach(t => {
@@ -3374,6 +3497,45 @@
       if (e.key === '3') setMode('voice');
     });
 
+    function confirmRemoveIntegration(label) {
+      return new Promise((resolve) => {
+        const dialog = document.getElementById('confirmDialog');
+        const message = document.getElementById('confirmDialogMessage');
+        const title = document.getElementById('confirmDialogTitle');
+        const cancelBtn = document.getElementById('confirmDialogCancel');
+        const confirmBtn = document.getElementById('confirmDialogConfirm');
+        const backdrop = document.getElementById('confirmDialogBackdrop');
+        if (!dialog || !message || !cancelBtn || !confirmBtn) {
+          resolve(window.confirm(`Remove ${label}? This cannot be undone.`));
+          return;
+        }
+
+        title.textContent = `Remove ${label}?`;
+        message.textContent = 'This will permanently delete the saved value from the encrypted vault on this server. You can add it again later.';
+        dialog.hidden = false;
+
+        const cleanup = (result) => {
+          dialog.hidden = true;
+          cancelBtn.removeEventListener('click', onCancel);
+          confirmBtn.removeEventListener('click', onConfirm);
+          backdrop?.removeEventListener('click', onCancel);
+          document.removeEventListener('keydown', onKeydown);
+          resolve(result);
+        };
+        const onCancel = () => cleanup(false);
+        const onConfirm = () => cleanup(true);
+        const onKeydown = (e) => {
+          if (e.key === 'Escape') onCancel();
+        };
+
+        cancelBtn.addEventListener('click', onCancel);
+        confirmBtn.addEventListener('click', onConfirm);
+        backdrop?.addEventListener('click', onCancel);
+        document.addEventListener('keydown', onKeydown);
+        confirmBtn.focus();
+      });
+    }
+
     document.getElementById('saveIntegrationsBtn')?.addEventListener('click', saveIntegrations);
     document.getElementById('refreshIntegrationsBtn')?.addEventListener('click', loadIntegrationsStatus);
     document.getElementById('integrationsPanel')?.addEventListener('click', async (e) => {
@@ -3392,7 +3554,9 @@
         return;
       }
 
-      if (!confirm('Remove this integration configuration?')) return;
+      const removeLabel = btn.dataset.removeLabel || 'this integration';
+      const confirmed = await confirmRemoveIntegration(removeLabel);
+      if (!confirmed) return;
 
       try {
         if (action === 'delete') {
