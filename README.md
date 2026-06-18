@@ -31,7 +31,12 @@ Agents can search a knowledge base (RAG), look up customers (CRM), create ticket
 - **Telephony** — Twilio voice webhooks, TwiML generation, call routing, SIP header extraction, human transfer
 - **CRM integration** — HubSpot adapter with mock fallback for demos
 - **iPaaS webhooks** — Outbound events for n8n/Zapier (`integrations/templates/`)
-- **Evaluation framework** — Automated test suites for containment, tool accuracy, and latency
+- **Evaluation framework** — Automated test suites for containment, tool accuracy, latency, grounding, and hallucination rate
+- **LLM parameter control** — Temperature, max tokens, top P, top K, repetition penalty, stop sequences, n sequences
+- **Guardrails** — Prompt-injection blocking and output sanitization
+- **Grounding & hallucination checks** — Per-response grounding score and risk level
+- **Few-shot & chain-of-thought prompting** — Configurable per agent in YAML
+- **Benchmarks** — Standardized benchmark suite for quality regression testing
 - **Web UI** — Chat, Copilot, and Voice Call Simulator at `http://127.0.0.1:8001/`
 - **REST API** — Full FastAPI surface with OpenAPI docs at `/docs`
 
@@ -163,6 +168,78 @@ Each agent has its own LLM model, temperature, token limits, and containment tar
 
 ---
 
+## LLM Configuration
+
+All LLM generation parameters are **user-configurable** per agent in `config/agents.yaml`:
+
+| Parameter | What it does | Config key |
+|-----------|--------------|------------|
+| **Max Tokens** | Output length limit | `max_tokens` |
+| **Temperature** | Randomness (0 = focused, 2 = creative) | `temperature` |
+| **Top P** | Nucleus sampling probability cutoff | `llm.top_p` |
+| **Top K** | Limit to top K tokens (Anthropic) | `llm.top_k` |
+| **Frequency Penalty** | Reduce repeated words | `llm.frequency_penalty` |
+| **Presence Penalty** | Encourage new topics | `llm.presence_penalty` |
+| **Stop Sequences** | Stop generation at phrases | `llm.stop_sequences` |
+| **Num Return Sequences** | Multiple completions (copilot: 2) | `llm.n` |
+| **Chain of Thought** | Internal step-by-step reasoning | `llm.chain_of_thought` |
+| **Few-Shot** | Example Q&A in system prompt | `llm.few_shot_enabled` |
+
+**View live config:**
+```bash
+curl http://127.0.0.1:8001/api/v1/llm/config
+```
+
+**Example agent LLM block:**
+```yaml
+chat_support:
+  temperature: 0.4
+  max_tokens: 1024
+  llm:
+    top_p: 0.95
+    frequency_penalty: 0.2
+    chain_of_thought: true
+    few_shot_enabled: true
+    stop_sequences: []
+```
+
+### Guardrails
+
+Enabled in `config/agents.yaml` under `guardrails:`:
+- Blocks prompt injection / jailbreak attempts
+- Sanitizes outputs that leak system prompts
+- Returns a safe fallback message when input is blocked
+
+### Grounding & Hallucination Detection
+
+Every LLM response includes metrics:
+```json
+{
+  "grounding_score": 0.42,
+  "hallucination_risk": "low",
+  "llm_params": { "temperature": 0.4, "top_p": 0.95 }
+}
+```
+
+- **grounding_score** — overlap between response and RAG context
+- **hallucination_risk** — `low` / `medium` / `high` based on grounding
+
+### LLM Concepts Covered
+
+| Concept | Implementation |
+|---------|------------------|
+| System / User prompts | `src/prompts/templates.py` |
+| RAG grounding | ChromaDB + keyword fallback |
+| Few-shot prompting | Examples in chat/copilot prompts |
+| Chain of thought | Internal reasoning instruction |
+| Agent + tool calling | LangGraph ReAct loop |
+| Guardrails | `src/llm/guardrails.py` |
+| Hallucination detection | `src/llm/hallucination.py` |
+| Inference latency | `response_time_ms` in metrics |
+| Benchmarks | `tests/evaluation/benchmarks.json` |
+
+---
+
 ## API Reference
 
 | Method | Endpoint | Description |
@@ -171,7 +248,8 @@ Each agent has its own LLM model, temperature, token limits, and containment tar
 | `POST` | `/api/v1/chat` | Send a chat message |
 | `POST` | `/api/v1/copilot` | Copilot assist request |
 | `DELETE` | `/api/v1/chat/{session_id}` | End a chat session |
-| `GET` | `/api/v1/agents` | List configured agents |
+| `GET` | `/api/v1/agents` | List configured agents (with LLM params) |
+| `GET` | `/api/v1/llm/config` | View all user-configurable LLM parameters |
 | `POST` | `/api/v1/rag/ingest` | Ingest documents into vector store |
 | `POST` | `/api/v1/rag/search` | Search knowledge base |
 | `POST` | `/api/v1/telephony/simulate` | Simulate a voice call (no Twilio needed) |
@@ -270,6 +348,9 @@ Metrics tracked:
 - **Containment rate** — % of queries resolved without escalation
 - **Tool accuracy** — correct tool selection (lookup, search, transfer)
 - **Response time** — latency in milliseconds
+- **Hallucination rate** — % of responses with high hallucination risk
+- **Grounding score** — average overlap with retrieved KB context
+- **Benchmarks** — standardized regression tests (`tests/evaluation/benchmarks.json`)
 
 Test cases live in `tests/evaluation/test_cases.json`.
 
@@ -296,8 +377,12 @@ voice-agents/
 │   ├── integrations/
 │   │   ├── crm.py               # HubSpot CRM adapter
 │   │   └── webhooks.py          # iPaaS event dispatcher
-│   ├── llm/factory.py           # Multi-provider LLM factory
-│   ├── prompts/templates.py   # Voice / chat / copilot prompts
+│   ├── llm/
+│   │   ├── factory.py           # Multi-provider LLM factory
+│   │   ├── params.py            # User-configurable LLM parameters
+│   │   ├── guardrails.py        # Input/output safety checks
+│   │   └── hallucination.py     # Grounding & hallucination scoring
+│   ├── prompts/templates.py     # Voice / chat / copilot prompts (few-shot, CoT)
 │   ├── rag/                     # Ingestion, vector store, retrieval
 │   ├── telephony/               # Twilio handler, call router, TwiML parser
 │   └── workflows/orchestrator.py # LangGraph agent orchestration
@@ -305,7 +390,9 @@ voice-agents/
 │   └── index.html               # Web UI
 ├── tests/
 │   ├── evaluation/test_cases.json
-│   └── test_platform.py
+│   ├── evaluation/benchmarks.json
+│   ├── test_platform.py
+│   └── test_llm_features.py
 ├── .env.example
 ├── requirements.txt
 ├── run.sh                       # One-command startup script
@@ -336,7 +423,7 @@ Copy `.env.example` to `.env`:
 pytest tests/ -v
 ```
 
-Expected: **7 tests passing** (call routing, prompts, tools, CRM mock).
+Expected: **14 tests passing** (routing, prompts, tools, CRM, guardrails, grounding, LLM params).
 
 ---
 
@@ -355,9 +442,10 @@ Expected: **7 tests passing** (call routing, prompts, tools, CRM mock).
 
 This project maps directly to enterprise AI agent engineering requirements:
 
-- Prompt design and workflow configuration
-- LLM orchestration (LangChain / LangGraph)
-- Retrieval-augmented generation (RAG)
+- Prompt design and workflow configuration (few-shot, chain-of-thought)
+- LLM orchestration (LangChain / LangGraph) with full parameter control
+- Retrieval-augmented generation (RAG) with grounding scores
+- Guardrails and hallucination detection
 - API and CRM integrations
 - Telephony (SIP, CCaaS, PSTN via Twilio)
 - iPaaS event routing (n8n, Zapier)

@@ -12,7 +12,10 @@ from langgraph.prebuilt import create_react_agent
 from src.agents.tools import TOOL_REGISTRY
 from src.config import get_settings, load_agent_config
 from src.llm.factory import get_llm
-from src.prompts.templates import PROMPT_REGISTRY
+from src.llm.guardrails import check_input, check_output
+from src.llm.hallucination import score_grounding
+from src.llm.params import resolve_llm_params
+from src.prompts.templates import PROMPT_REGISTRY, build_system_vars
 from src.rag.keyword_search import best_answer, search_faq
 from src.rag.retriever import KnowledgeRetriever
 
@@ -24,7 +27,10 @@ class AgentOrchestrator:
 
     def __init__(self, agent_id: str):
         self.agent_id = agent_id
-        self.config = load_agent_config()["agents"][agent_id]
+        self.full_config = load_agent_config()
+        self.config = self.full_config["agents"][agent_id]
+        self.llm_params = resolve_llm_params(self.config, self.full_config.get("llm_defaults"))
+        self.guardrails_enabled = self.full_config.get("guardrails", {}).get("enabled", True)
         self.retriever = KnowledgeRetriever()
         self.chat_history: list = []
         self._agent = None if self._is_mock_mode() else self._build_agent()
@@ -49,8 +55,8 @@ class AgentOrchestrator:
         llm = get_llm(
             provider=self.config.get("llm_provider"),
             model=self.config.get("llm_model"),
-            temperature=self.config.get("temperature", 0.3),
-            max_tokens=self.config.get("max_tokens", 1024),
+            agent_config=self.config,
+            global_defaults=self.full_config.get("llm_defaults"),
         )
         tools = [TOOL_REGISTRY[name] for name in self.config.get("tools", []) if name in TOOL_REGISTRY]
         return create_react_agent(llm, tools)
@@ -159,6 +165,20 @@ class AgentOrchestrator:
         customer_info: str = "No customer identified",
         extra_context: str = "",
     ) -> dict[str, Any]:
+        if self.guardrails_enabled:
+            input_check = check_input(user_input)
+            if not input_check.allowed:
+                return {
+                    "response": "I can't help with that request. Please ask a support-related question.",
+                    "agent_id": self.agent_id,
+                    "channel": self._get_channel(),
+                    "tool_calls": [],
+                    "metrics": {
+                        "guardrail_blocked": True,
+                        "guardrail_reason": input_check.reason,
+                    },
+                }
+
         if self._is_mock_mode():
             return await self._invoke_mock(user_input, customer_info, extra_context)
 
@@ -169,14 +189,16 @@ class AgentOrchestrator:
         if extra_context:
             rag_context = f"{rag_context}\n\n{extra_context}"
 
-        system_vars = {
-            "agent_name": self.config["name"],
-            "context": rag_context,
-            "customer_info": customer_info,
-            "conversation_summary": extra_context or "N/A",
-            "input": user_input,
-            "chat_history": self.chat_history,
-        }
+        system_vars = build_system_vars(
+            agent_name=self.config["name"],
+            context=rag_context,
+            customer_info=customer_info,
+            conversation_summary=extra_context or "N/A",
+            few_shot_enabled=self.llm_params.get("few_shot_enabled", True),
+            chain_of_thought=self.llm_params.get("chain_of_thought", False),
+        )
+        system_vars["input"] = user_input
+        system_vars["chat_history"] = self.chat_history
 
         prompt_template = PROMPT_REGISTRY[channel]
         formatted = prompt_template.invoke(system_vars)
@@ -187,6 +209,13 @@ class AgentOrchestrator:
         messages = result["messages"]
         response_msg = messages[-1]
         response_text = response_msg.content if isinstance(response_msg, AIMessage) else str(response_msg)
+
+        if self.guardrails_enabled:
+            output_check = check_output(response_text)
+            if output_check.sanitized_output:
+                response_text = output_check.sanitized_output
+
+        grounding = score_grounding(response_text, rag_context)
 
         self.chat_history.append(HumanMessage(content=user_input))
         self.chat_history.append(AIMessage(content=response_text))
@@ -204,6 +233,7 @@ class AgentOrchestrator:
             agent=self.agent_id,
             elapsed_ms=round(elapsed_ms),
             tool_calls=len(tool_calls),
+            grounding=grounding.score,
         )
 
         return {
@@ -214,6 +244,19 @@ class AgentOrchestrator:
             "metrics": {
                 "response_time_ms": round(elapsed_ms),
                 "rag_chunks_used": len(self.retriever.retrieve(user_input)),
+                "grounding_score": grounding.score,
+                "hallucination_risk": grounding.hallucination_risk,
+                "llm_params": {
+                    "temperature": self.llm_params.get("temperature"),
+                    "max_tokens": self.llm_params.get("max_tokens"),
+                    "top_p": self.llm_params.get("top_p"),
+                    "top_k": self.llm_params.get("top_k"),
+                    "frequency_penalty": self.llm_params.get("frequency_penalty"),
+                    "presence_penalty": self.llm_params.get("presence_penalty"),
+                    "n": self.llm_params.get("n"),
+                    "chain_of_thought": self.llm_params.get("chain_of_thought"),
+                    "few_shot_enabled": self.llm_params.get("few_shot_enabled"),
+                },
             },
         }
 

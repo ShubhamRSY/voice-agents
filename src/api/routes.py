@@ -205,8 +205,34 @@ async def run_evaluation() -> dict[str, Any]:
 @router.get("/agents")
 async def list_agents() -> dict[str, Any]:
     from src.config import load_agent_config
+    from src.llm.params import resolve_llm_params
+
+    config = load_agent_config()
+    defaults = config.get("llm_defaults", {})
+    return {
+        agent_id: {
+            "name": cfg["name"],
+            "channel": cfg["channel"],
+            "tools": cfg.get("tools", []),
+            "llm_params": resolve_llm_params(cfg, defaults),
+        }
+        for agent_id, cfg in config["agents"].items()
+    }
+
+
+@router.get("/llm/config")
+async def get_llm_config() -> dict[str, Any]:
+    """Return user-configurable LLM parameters per agent."""
+    from src.config import load_agent_config
+    from src.llm.params import DEFAULT_LLM_PARAMS, resolve_llm_params
+
     config = load_agent_config()
     return {
-        agent_id: {"name": cfg["name"], "channel": cfg["channel"], "tools": cfg.get("tools", [])}
-        for agent_id, cfg in config["agents"].items()
+        "defaults": DEFAULT_LLM_PARAMS,
+        "global": config.get("llm_defaults", {}),
+        "guardrails": config.get("guardrails", {}),
+        "agents": {
+            agent_id: resolve_llm_params(cfg, config.get("llm_defaults"))
+            for agent_id, cfg in config["agents"].items()
+        },
     }

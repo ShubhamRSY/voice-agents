@@ -7,6 +7,15 @@ agents:
     temperature: 0.3
     max_tokens: 512
     containment_target: 0.75
+    llm:
+      top_p: 0.9
+      top_k: 40
+      frequency_penalty: 0.3
+      presence_penalty: 0.1
+      n: 1
+      stop_sequences: ["\n\nUser:", "Human:"]
+      chain_of_thought: false
+      few_shot_enabled: false
     tools:
       - lookup_customer
       - search_knowledge_base
@@ -26,6 +35,15 @@ agents:
     temperature: 0.4
     max_tokens: 1024
     containment_target: 0.80
+    llm:
+      top_p: 0.95
+      top_k: 50
+      frequency_penalty: 0.2
+      presence_penalty: 0.0
+      n: 1
+      stop_sequences: []
+      chain_of_thought: true
+      few_shot_enabled: true
     tools:
       - lookup_customer
       - search_knowledge_base
@@ -39,10 +57,34 @@ agents:
     llm_model: gpt-4o-mini
     temperature: 0.2
     max_tokens: 2048
+    llm:
+      top_p: 0.9
+      top_k: 40
+      frequency_penalty: 0.1
+      presence_penalty: 0.0
+      n: 2
+      stop_sequences: ["---"]
+      chain_of_thought: true
+      few_shot_enabled: true
     tools:
       - search_knowledge_base
       - draft_response
       - summarize_conversation
+
+llm_defaults:
+  top_p: 1.0
+  top_k: 40
+  frequency_penalty: 0.0
+  presence_penalty: 0.0
+  n: 1
+  stop_sequences: []
+  chain_of_thought: false
+  few_shot_enabled: true
+
+guardrails:
+  enabled: true
+  block_prompt_injection: true
+  sanitize_output: true
 
 rag:
   chunk_size: 512
@@ -56,4 +98,7 @@ evaluation:
     - avg_response_time_ms
     - tool_accuracy
     - hallucination_rate
+    - grounding_score
   test_suite: tests/evaluation/test_cases.json
+  benchmark_suite: tests/evaluation/benchmarks.json
+  hallucination_threshold: 0.15
