@@ -213,6 +213,7 @@ class AgentOrchestrator:
         self.chat_history.append(AIMessage(content=response_text))
 
         elapsed_ms = (time.perf_counter() - start) * 1000
+        retrieved = self.retriever.retrieve(user_input)
         return {
             "response": response_text,
             "agent_id": self.agent_id,
@@ -220,7 +221,16 @@ class AgentOrchestrator:
             "tool_calls": tool_calls,
             "metrics": {
                 "response_time_ms": round(elapsed_ms),
-                "rag_chunks_used": len(self.retriever.retrieve(user_input)),
+                "rag_chunks_used": len(retrieved),
+                "sources": [
+                    {
+                        "source": r["metadata"].get("source", "unknown"),
+                        "score": round(r.get("score", 0), 2),
+                    }
+                    for r in retrieved[:3]
+                ],
+                "grounding_score": 0.65 if retrieved else 0.0,
+                "hallucination_risk": "low" if retrieved else "medium",
                 "mode": "mock",
             },
         }

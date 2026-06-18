@@ -11,3 +11,6 @@ build/
 .DS_Store
 .coverage
 htmlcov/
+tests/reports/junit*.xml
+tests/reports/coverage*.xml
+tests/reports/summary_*.txt

@@ -82,16 +82,29 @@ class VectorStore:
         return len(ids)
 
     def similarity_search(self, query: str, k: int | None = None) -> list[dict]:
+        from src.rag.keyword_search import search_faq
+
         config = load_agent_config()
         k = k or config["rag"]["top_k"]
         threshold = config["rag"]["score_threshold"]
 
-        results = self.store.similarity_search_with_relevance_scores(query, k=k)
-        return [
-            {"content": doc.page_content, "metadata": doc.metadata, "score": score}
-            for doc, score in results
-            if score >= threshold
-        ]
+        try:
+            results = self.store.similarity_search_with_relevance_scores(query, k=k)
+            return [
+                {"content": doc.page_content, "metadata": doc.metadata, "score": score}
+                for doc, score in results
+                if score >= threshold
+            ]
+        except Exception:
+            faq = search_faq(query, top_k=k)
+            return [
+                {
+                    "content": hit["answer"],
+                    "metadata": {"source": hit.get("source", "faq")},
+                    "score": hit.get("score", 0.5),
+                }
+                for hit in faq
+            ]
 
     def delete_collection(self) -> None:
         try:

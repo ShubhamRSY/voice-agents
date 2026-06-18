@@ -47,6 +47,7 @@ dependencies = [
 dev = [
     "pytest>=8.3.0",
     "pytest-asyncio>=0.24.0",
+    "pytest-cov>=6.0.0",
 ]
 
 [project.urls]
@@ -61,3 +62,7 @@ include = ["src*"]
 asyncio_mode = "auto"
 testpaths = ["tests"]
 pythonpath = ["."]
+markers = [
+    "e2e: end-to-end user journey tests",
+    "nfr: non-functional tests (performance, security, concurrency)",
+]
