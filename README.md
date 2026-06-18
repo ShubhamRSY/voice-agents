@@ -44,26 +44,221 @@ Agents can search a knowledge base (RAG), look up customers (CRM), create ticket
 
 ## Architecture
 
+### Design Principles
+
+| Principle | Description |
+|-----------|-------------|
+| **Omnichannel** | Single orchestration core serves chat, voice, and copilot with channel-specific prompts and tools |
+| **Configuration-driven** | Agent behavior, LLM parameters, and routing rules defined in `config/agents.yaml` — no code changes required |
+| **Layered separation** | API gateway, agent runtime, integrations, and data stores are independently replaceable |
+| **Grounded responses** | RAG retrieval precedes generation; every response carries grounding and hallucination metrics |
+| **Graceful degradation** | Offline rule engine and keyword search when LLM or CRM credentials are unavailable |
+| **Observable by default** | Structured logging, per-request metrics, and automated evaluation for regression control |
+
+### System Context
+
+```mermaid
+flowchart TB
+    subgraph Channels["Customer & Agent Channels"]
+        WEB["Web Console<br/><i>Chat · Copilot · Voice Simulator</i>"]
+        PSTN["PSTN / CCaaS<br/><i>Twilio · SIP</i>"]
+        API_CLIENT["REST API Clients<br/><i>CCaaS · CRM · Custom Apps</i>"]
+    end
+
+    subgraph Platform["Enterprise Voice & Chat AI Platform"]
+        GW["API Gateway<br/><i>FastAPI · OpenAPI</i>"]
+        RT["Agent Runtime<br/><i>LangGraph · Guardrails · RAG</i>"]
+    end
+
+    subgraph External["External Systems"]
+        LLM["LLM Providers<br/><i>OpenAI · Anthropic · Gemini</i>"]
+        CRM["CRM<br/><i>HubSpot</i>"]
+        IPAAS["iPaaS<br/><i>n8n · Zapier</i>"]
+        VDB["Vector Store<br/><i>ChromaDB</i>"]
+    end
+
+    WEB --> GW
+    PSTN --> GW
+    API_CLIENT --> GW
+    GW --> RT
+    RT --> LLM
+    RT --> VDB
+    RT --> CRM
+    RT --> IPAAS
+    GW --> PSTN
 ```
-┌──────────────────────────────────────────────────────────────┐
-│                    Web UI  +  FastAPI Gateway                 │
-│         /          /api/v1/chat   /copilot   /telephony     │
-└──────────┬──────────────┬──────────────┬────────────────────┘
-           │              │              │
-    ┌──────▼──────┐ ┌─────▼─────┐ ┌─────▼──────┐
-    │ Chat Agent  │ │  Copilot  │ │ Voice Agent │
-    └──────┬──────┘ └─────┬─────┘ └─────┬──────┘
-           │              │              │
-    ┌──────▼──────────────▼──────────────▼──────────────────┐
-    │              LangGraph Orchestrator                    │
-    │        Prompts + Tool Calling + RAG Context            │
-    └──────┬──────────────┬──────────────┬──────────────────┘
-           │              │              │
-    ┌──────▼──────┐ ┌─────▼─────┐ ┌─────▼──────┐
-    │  ChromaDB   │ │  HubSpot  │ │   Twilio   │
-    │    (RAG)    │ │   (CRM)   │ │  (Voice)   │
-    └─────────────┘ └───────────┘ └────────────┘
+
+### Layered Architecture
+
+```mermaid
+flowchart TB
+    subgraph L1["Presentation Layer"]
+        UI["Operator Console<br/>static/index.html"]
+        DOCS["OpenAPI /docs"]
+    end
+
+    subgraph L2["API Gateway Layer"]
+        ROUTES["REST Router<br/>src/api/routes.py"]
+        CORS["CORS · Session Routing · Webhook Ingress"]
+    end
+
+    subgraph L3["Agent Runtime Layer"]
+        ORCH["Agent Orchestrator<br/>src/workflows/orchestrator.py"]
+        GRAPH["LangGraph ReAct Loop"]
+        PROMPT["Prompt Templates<br/>Few-shot · CoT · Channel-specific"]
+        GUARD["Guardrails & Grounding<br/>Input filter · Output sanitize · Hallucination score"]
+        EVAL["Quality Evaluator<br/>Containment · Benchmarks"]
+    end
+
+    subgraph L4["Tool & Integration Layer"]
+        TOOLS["Agent Tools<br/>lookup · search · ticket · transfer · draft"]
+        TEL["Telephony Handler<br/>TwiML · Call Router · SIP headers"]
+        WH["iPaaS Webhook Dispatcher<br/>n8n · Zapier events"]
+        CRM_ADP["CRM Adapter<br/>HubSpot REST"]
+    end
+
+    subgraph L5["Knowledge & Configuration Layer"]
+        RAG["RAG Pipeline<br/>Ingestion · Retriever · Keyword fallback"]
+        CHROMA["ChromaDB Vector Store"]
+        YAML["agents.yaml<br/>LLM params · Tools · Routing rules"]
+    end
+
+    UI --> ROUTES
+    DOCS --> ROUTES
+    ROUTES --> ORCH
+    ROUTES --> TEL
+    ROUTES --> WH
+    ROUTES --> EVAL
+    ORCH --> GRAPH
+    ORCH --> PROMPT
+    ORCH --> GUARD
+    ORCH --> TOOLS
+    ORCH --> RAG
+    TEL --> ORCH
+    TOOLS --> CRM_ADP
+    TOOLS --> RAG
+    RAG --> CHROMA
+    ORCH --> YAML
+    TEL --> YAML
 ```
+
+### Request Flow — Chat Channel
+
+```mermaid
+sequenceDiagram
+    participant C as Client
+    participant API as API Gateway
+    participant O as Orchestrator
+    participant G as Guardrails
+    participant R as RAG Retriever
+    participant L as LLM (LangGraph)
+    participant T as Tools
+    participant E as External Systems
+
+    C->>API: POST /api/v1/chat
+    API->>O: invoke(message, session)
+    O->>G: check_input(message)
+    alt Blocked by guardrails
+        G-->>O: reject
+        O-->>API: safe fallback response
+    else Allowed
+        O->>R: retrieve context (semantic + keyword)
+        R-->>O: grounded KB snippets
+        O->>L: ReAct loop (prompt + context + tools)
+        L->>T: tool_call (optional)
+        T->>E: CRM lookup / ticket create
+        E-->>T: result
+        T-->>L: tool output
+        L-->>O: final response
+        O->>G: check_output + score_grounding
+        O-->>API: response + metrics
+    end
+    API-->>C: JSON (response, grounding_score, latency)
+```
+
+### Request Flow — Voice Channel (PSTN)
+
+```mermaid
+sequenceDiagram
+    participant P as PSTN Caller
+    participant TW as Twilio
+    participant API as API Gateway
+    participant TEL as Telephony Handler
+    participant CR as Call Router
+    participant O as Orchestrator
+
+    P->>TW: Inbound call
+    TW->>API: POST /telephony/voice/inbound
+    API->>TEL: handle_inbound (CallSid, From)
+    TEL->>CR: route(call metadata, SIP headers)
+    CR-->>TEL: agent_id, transfer rules
+    TEL-->>TW: TwiML Gather (greeting)
+    TW-->>P: Play greeting · listen
+    P->>TW: Speech utterance
+    TW->>API: POST /telephony/voice/process
+    API->>TEL: speech result
+    TEL->>O: invoke(utterance, caller ID)
+    O-->>TEL: response + tool_calls
+    alt transfer_to_human
+        TEL-->>TW: TwiML Dial (escalation)
+        TW-->>P: Connect to agent queue
+    else resolved
+        TEL-->>TW: TwiML Say + Gather
+        TW-->>P: Agent response
+    end
+```
+
+### Component Reference
+
+| Layer | Component | Responsibility | Module |
+|-------|-----------|----------------|--------|
+| Presentation | Operator Console | Chat, copilot, and voice simulation UI | `static/index.html` |
+| API Gateway | REST Router | HTTP ingress, session management, OpenAPI | `src/api/routes.py` |
+| API Gateway | Application Host | Lifespan, CORS, static asset serving | `src/main.py` |
+| Agent Runtime | Orchestrator | Session state, RAG injection, LLM invocation | `src/workflows/orchestrator.py` |
+| Agent Runtime | LangGraph Agent | ReAct reasoning loop with tool calling | `src/workflows/orchestrator.py` |
+| Agent Runtime | Prompt Engine | Channel templates, few-shot, chain-of-thought | `src/prompts/templates.py` |
+| Agent Runtime | LLM Factory | Multi-provider model instantiation | `src/llm/factory.py` |
+| Agent Runtime | Parameter Resolver | Temperature, top_p, stop sequences per agent | `src/llm/params.py` |
+| Agent Runtime | Guardrails | Prompt-injection blocking, output sanitization | `src/llm/guardrails.py` |
+| Agent Runtime | Grounding Scorer | Hallucination risk and KB overlap metrics | `src/llm/hallucination.py` |
+| Agent Runtime | Evaluator | Containment, tool accuracy, benchmark regression | `src/evaluation/evaluator.py` |
+| Tools | Agent Tools | CRM lookup, KB search, ticketing, transfer | `src/agents/tools.py` |
+| Integration | Telephony Handler | TwiML generation, speech gather, call sessions | `src/telephony/twilio_handler.py` |
+| Integration | Call Router | Skill-based routing, VIP detection, SIP headers | `src/telephony/call_router.py` |
+| Integration | CRM Adapter | HubSpot contact lookup and updates | `src/integrations/crm.py` |
+| Integration | Webhook Dispatcher | Outbound lifecycle events to iPaaS | `src/integrations/webhooks.py` |
+| Knowledge | RAG Pipeline | Document ingestion, chunking, embedding | `src/rag/ingestion.py` |
+| Knowledge | Retriever | Semantic search with keyword fallback | `src/rag/retriever.py` |
+| Knowledge | Vector Store | ChromaDB persistence and query | `src/rag/vector_store.py` |
+| Configuration | Agent Registry | Per-channel agents, tools, LLM and telephony config | `config/agents.yaml` |
+
+### Deployment Topology
+
+```mermaid
+flowchart LR
+    subgraph Dev["Development / Staging"]
+        RUN["./run.sh<br/>Uvicorn :8001"]
+        NGROK["ngrok tunnel<br/><i>Twilio webhooks</i>"]
+        RUN --> NGROK
+    end
+
+    subgraph Prod["Production (recommended)"]
+        LB["Load Balancer / API Gateway"]
+        APP1["App Instance 1"]
+        APP2["App Instance 2"]
+        CHROMA_P["ChromaDB<br/><i>persistent volume</i>"]
+        SECRETS["Secrets Manager<br/><i>API keys · Twilio · HubSpot</i>"]
+        LB --> APP1
+        LB --> APP2
+        APP1 --> CHROMA_P
+        APP2 --> CHROMA_P
+        APP1 --> SECRETS
+        APP2 --> SECRETS
+    end
+```
+
+**Current default:** single-process Uvicorn deployment suitable for development, staging, and pilot rollouts. For production scale, run multiple stateless app instances behind a load balancer, persist ChromaDB to shared storage, and inject credentials via a secrets manager. Voice sessions are keyed by `CallSid`; chat sessions are keyed by `session_id`.
 
 ---
 

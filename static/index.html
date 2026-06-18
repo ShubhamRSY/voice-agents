@@ -2,366 +2,810 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Voice Agents Platform</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b0f14" />
+  <meta name="description" content="Enterprise Support Agent Console — chat, copilot, and voice operations" />
+  <title>Enterprise Support Agent Console</title>
   <style>
     :root {
-      --bg: #0f1419;
-      --surface: #1a2332;
-      --surface2: #243044;
-      --border: #2d3a4f;
-      --text: #e7ecf3;
-      --muted: #8b9cb3;
+      --bg: #0b0f14;
+      --bg-elevated: #111820;
+      --surface: #151c27;
+      --surface-hover: #1c2533;
+      --surface-2: #1e2836;
+      --border: rgba(148, 163, 184, 0.12);
+      --border-strong: rgba(148, 163, 184, 0.22);
+      --text: #f1f5f9;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
       --accent: #3b82f6;
+      --accent-soft: rgba(59, 130, 246, 0.14);
       --accent-hover: #2563eb;
-      --user-bubble: #1d4ed8;
-      --agent-bubble: #243044;
       --success: #22c55e;
-      --radius: 12px;
+      --success-soft: rgba(34, 197, 94, 0.12);
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --voice: #10b981;
+      --voice-soft: rgba(16, 185, 129, 0.12);
+      --radius-sm: 8px;
+      --radius: 14px;
+      --radius-lg: 20px;
+      --shadow: 0 4px 24px rgba(0, 0, 0, 0.35);
+      --header-h: 60px;
+      --sidebar-w: 300px;
+      --font: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html {
+      height: 100%;
+      -webkit-text-size-adjust: 100%;
+    }
+
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-family: var(--font);
       background: var(--bg);
       color: var(--text);
-      min-height: 100vh;
+      min-height: 100%;
+      min-height: 100dvh;
       display: flex;
       flex-direction: column;
+      line-height: 1.5;
+      overflow: hidden;
     }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 50% at 50% -20%, rgba(59, 130, 246, 0.15), transparent),
+        radial-gradient(ellipse 60% 40% at 100% 100%, rgba(16, 185, 129, 0.08), transparent);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── Header ── */
     header {
-      background: var(--surface);
+      position: relative;
+      z-index: 50;
+      height: var(--header-h);
+      padding: 0 1rem;
+      padding-left: max(1rem, env(safe-area-inset-left));
+      padding-right: max(1rem, env(safe-area-inset-right));
+      background: rgba(17, 24, 32, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
       border-bottom: 1px solid var(--border);
-      padding: 1rem 1.5rem;
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 1rem;
+      gap: 0.75rem;
+      flex-shrink: 0;
     }
-    header h1 { font-size: 1.25rem; font-weight: 600; }
-    header h1 span { color: var(--accent); }
-    .header-links a {
-      color: var(--muted);
-      text-decoration: none;
-      font-size: 0.875rem;
-      margin-left: 1rem;
+
+    .menu-btn {
+      display: none;
+      width: 40px;
+      height: 40px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: background var(--transition);
     }
-    .header-links a:hover { color: var(--accent); }
-    .status {
+    .menu-btn:hover { background: var(--surface-hover); }
+    .menu-btn svg { width: 20px; height: 20px; }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      min-width: 0;
+      flex: 1;
+    }
+
+    .brand-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--accent), #6366f1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      box-shadow: 0 2px 12px rgba(59, 130, 246, 0.35);
+    }
+    .brand-icon svg { width: 18px; height: 18px; color: white; }
+
+    .brand-text h1 {
+      font-size: clamp(0.9rem, 2.5vw, 1.05rem);
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .brand-text p {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      display: none;
+    }
+    @media (min-width: 480px) {
+      .brand-text p { display: block; }
+    }
+
+    .header-modes {
+      display: none;
+      gap: 0.35rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 3px;
+    }
+    @media (min-width: 900px) {
+      .header-modes { display: flex; }
+    }
+
+    .header-actions {
       display: flex;
       align-items: center;
       gap: 0.5rem;
-      font-size: 0.8rem;
-      color: var(--muted);
+      flex-shrink: 0;
+    }
+
+    .status-pill {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.35rem 0.65rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
     }
     .status-dot {
-      width: 8px; height: 8px;
+      width: 7px;
+      height: 7px;
       border-radius: 50%;
-      background: var(--muted);
+      background: var(--text-muted);
+      flex-shrink: 0;
     }
-    .status-dot.online { background: var(--success); box-shadow: 0 0 8px var(--success); }
-    .layout {
-      flex: 1;
-      display: grid;
-      grid-template-columns: 260px 1fr;
-      max-width: 1100px;
-      width: 100%;
-      margin: 0 auto;
-      gap: 0;
-      min-height: 0;
+    .status-dot.online {
+      background: var(--success);
+      box-shadow: 0 0 8px var(--success);
     }
-    @media (max-width: 768px) {
-      .layout { grid-template-columns: 1fr; }
-      .sidebar { display: none; }
-    }
-    .sidebar {
+
+    .header-link {
+      display: none;
+      padding: 0.4rem 0.75rem;
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 0.8rem;
+      font-weight: 500;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
       background: var(--surface);
+      transition: all var(--transition);
+    }
+    .header-link:hover {
+      color: var(--text);
+      border-color: var(--border-strong);
+      background: var(--surface-hover);
+    }
+    @media (min-width: 640px) {
+      .header-link { display: inline-flex; }
+    }
+
+    /* ── Layout ── */
+    .app-shell {
+      position: relative;
+      z-index: 1;
+      flex: 1;
+      display: flex;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .sidebar-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      top: var(--header-h);
+      background: rgba(0, 0, 0, 0.55);
+      z-index: 40;
+      opacity: 0;
+      transition: opacity var(--transition);
+      pointer-events: none;
+    }
+    .sidebar-overlay.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .sidebar {
+      width: var(--sidebar-w);
+      flex-shrink: 0;
+      background: rgba(21, 28, 39, 0.95);
+      backdrop-filter: blur(12px);
       border-right: 1px solid var(--border);
-      padding: 1.25rem;
       display: flex;
       flex-direction: column;
       gap: 1.25rem;
+      padding: 1.25rem;
+      padding-bottom: max(1.25rem, env(safe-area-inset-bottom));
+      overflow-y: auto;
+      transition: transform var(--transition);
     }
-    .sidebar label {
+
+    @media (max-width: 899px) {
+      .menu-btn { display: flex; }
+      .sidebar {
+        position: fixed;
+        top: var(--header-h);
+        left: 0;
+        bottom: 0;
+        z-index: 45;
+        transform: translateX(-100%);
+        box-shadow: var(--shadow);
+      }
+      .sidebar.open { transform: translateX(0); }
+      .sidebar-overlay { display: block; }
+    }
+
+    .field label {
       display: block;
-      font-size: 0.75rem;
+      font-size: 0.7rem;
+      font-weight: 600;
       text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--muted);
-      margin-bottom: 0.4rem;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      margin-bottom: 0.45rem;
     }
+
+    .field + .field { margin-top: 1rem; }
+
     select, input[type="text"] {
       width: 100%;
-      padding: 0.6rem 0.75rem;
-      background: var(--surface2);
+      padding: 0.65rem 0.85rem;
+      background: var(--surface-2);
       border: 1px solid var(--border);
-      border-radius: 8px;
+      border-radius: var(--radius-sm);
       color: var(--text);
-      font-size: 0.9rem;
+      font-size: 0.875rem;
+      font-family: inherit;
+      transition: border-color var(--transition), box-shadow var(--transition);
     }
     select:focus, input:focus, textarea:focus {
       outline: none;
       border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-soft);
     }
-    .tabs {
+
+    .tabs, .header-modes {
       display: flex;
-      gap: 0.5rem;
+      gap: 0.35rem;
     }
+    @media (min-width: 900px) {
+      .sidebar .tabs { display: flex; }
+    }
+    @media (max-width: 899px) {
+      .sidebar .tabs { display: none; }
+    }
+
     .tab {
       flex: 1;
-      padding: 0.5rem;
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      color: var(--muted);
+      padding: 0.55rem 0.5rem;
+      background: transparent;
+      border: none;
+      border-radius: 6px;
+      color: var(--text-secondary);
       cursor: pointer;
       font-size: 0.8rem;
+      font-weight: 500;
+      font-family: inherit;
       text-align: center;
-      transition: all 0.15s;
+      transition: all var(--transition);
+      white-space: nowrap;
     }
+    .tab:hover { color: var(--text); background: var(--surface-hover); }
     .tab.active {
       background: var(--accent);
-      border-color: var(--accent);
+      color: white;
+      box-shadow: 0 2px 8px rgba(59, 130, 246, 0.35);
+    }
+
+    .sidebar-footer {
+      margin-top: auto;
+      padding-top: 1rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      padding: 0.7rem 1.1rem;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-size: 0.875rem;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all var(--transition);
+    }
+    .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+    .btn-primary {
+      background: var(--accent);
       color: white;
     }
-    .chat-area {
+    .btn-primary:hover:not(:disabled) { background: var(--accent-hover); }
+    .btn-success {
+      background: var(--success);
+      color: white;
+      width: 100%;
+    }
+    .btn-success:hover:not(:disabled) { filter: brightness(1.08); }
+    .btn-ghost {
+      background: var(--surface-2);
+      color: var(--text-secondary);
+      border: 1px solid var(--border);
+      width: 100%;
+    }
+    .btn-ghost:hover:not(:disabled) {
+      background: var(--surface-hover);
+      color: var(--text);
+    }
+
+    .call-info {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      padding: 0.75rem;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      line-height: 1.55;
+      margin-top: 0.75rem;
+    }
+
+    /* ── Main chat area ── */
+    .main {
+      flex: 1;
       display: flex;
       flex-direction: column;
-      min-height: calc(100vh - 65px);
+      min-width: 0;
+      min-height: 0;
+      background: rgba(11, 15, 20, 0.6);
     }
+
     .messages {
       flex: 1;
       overflow-y: auto;
-      padding: 1.5rem;
+      overflow-x: hidden;
+      padding: 1.25rem;
+      padding-left: max(1.25rem, env(safe-area-inset-left));
+      padding-right: max(1.25rem, env(safe-area-inset-right));
       display: flex;
       flex-direction: column;
       gap: 1rem;
+      scroll-behavior: smooth;
+      -webkit-overflow-scrolling: touch;
     }
-    .message {
-      max-width: 80%;
-      padding: 0.85rem 1rem;
-      border-radius: var(--radius);
-      line-height: 1.5;
-      font-size: 0.95rem;
-      animation: fadeIn 0.2s ease;
+
+    @media (min-width: 768px) {
+      .messages { padding: 1.75rem 2rem; }
     }
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(4px); }
+
+    .welcome {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 2rem 1rem;
+      min-height: min(60vh, 480px);
+      animation: fadeUp 0.4s ease;
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
       to { opacity: 1; transform: translateY(0); }
     }
-    .message.user {
-      align-self: flex-end;
-      background: var(--user-bubble);
-      border-bottom-right-radius: 4px;
-    }
-    .message.agent {
-      align-self: flex-start;
-      background: var(--agent-bubble);
-      border: 1px solid var(--border);
-      border-bottom-left-radius: 4px;
-    }
-    .message .meta {
-      font-size: 0.7rem;
-      color: var(--muted);
-      margin-top: 0.5rem;
-    }
-    .welcome {
-      text-align: center;
-      color: var(--muted);
-      padding: 3rem 1rem;
-    }
-    .welcome h2 { color: var(--text); margin-bottom: 0.5rem; font-size: 1.1rem; }
-    .suggestions {
+
+    .welcome-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 16px;
+      background: var(--accent-soft);
+      border: 1px solid rgba(59, 130, 246, 0.25);
       display: flex;
-      flex-wrap: wrap;
-      gap: 0.5rem;
+      align-items: center;
       justify-content: center;
-      margin-top: 1.5rem;
+      margin-bottom: 1.25rem;
     }
+    .welcome-icon svg { width: 28px; height: 28px; color: var(--accent); }
+
+    .welcome h2 {
+      font-size: clamp(1.15rem, 3vw, 1.4rem);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      margin-bottom: 0.5rem;
+      max-width: 420px;
+    }
+    .welcome > p {
+      color: var(--text-secondary);
+      font-size: clamp(0.875rem, 2vw, 0.95rem);
+      max-width: 480px;
+      line-height: 1.6;
+    }
+
+    .suggestions {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 0.6rem;
+      margin-top: 1.75rem;
+      width: 100%;
+      max-width: 560px;
+    }
+
     .suggestion {
-      padding: 0.5rem 1rem;
-      background: var(--surface2);
+      padding: 0.75rem 1rem;
+      background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 20px;
-      font-size: 0.85rem;
+      border-radius: var(--radius);
+      font-size: 0.82rem;
+      font-weight: 500;
+      font-family: inherit;
       cursor: pointer;
-      color: var(--muted);
-      transition: all 0.15s;
+      color: var(--text-secondary);
+      text-align: left;
+      transition: all var(--transition);
+      line-height: 1.4;
     }
     .suggestion:hover {
       border-color: var(--accent);
       color: var(--text);
+      background: var(--accent-soft);
+      transform: translateY(-1px);
     }
-    .input-area {
-      padding: 1rem 1.5rem 1.5rem;
-      border-top: 1px solid var(--border);
-      background: var(--surface);
-    }
-    .input-row {
+
+    /* ── Messages ── */
+    .msg-row {
       display: flex;
-      gap: 0.75rem;
-      align-items: flex-end;
+      gap: 0.65rem;
+      max-width: 100%;
+      animation: fadeUp 0.25s ease;
     }
+    .msg-row.user { flex-direction: row-reverse; align-self: flex-end; }
+    .msg-row.agent, .msg-row.voice { align-self: flex-start; }
+    .msg-row.system { align-self: center; justify-content: center; }
+
+    .avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 10px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      font-weight: 700;
+      margin-top: 2px;
+    }
+    .msg-row.user .avatar {
+      background: var(--accent);
+      color: white;
+    }
+    .msg-row.agent .avatar {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+    }
+    .msg-row.voice .avatar {
+      background: var(--voice-soft);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: var(--voice);
+    }
+
+    .bubble {
+      max-width: min(85%, 640px);
+      padding: 0.85rem 1rem;
+      border-radius: var(--radius);
+      font-size: clamp(0.875rem, 2vw, 0.9375rem);
+      line-height: 1.55;
+      word-break: break-word;
+    }
+    .msg-row.user .bubble {
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      color: white;
+      border-bottom-right-radius: 4px;
+    }
+    .msg-row.agent .bubble {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-bottom-left-radius: 4px;
+    }
+    .msg-row.voice .bubble {
+      background: rgba(16, 185, 129, 0.08);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+      border-bottom-left-radius: 4px;
+    }
+    .msg-row.system .bubble {
+      background: transparent;
+      border: 1px dashed var(--border);
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      text-align: center;
+      padding: 0.6rem 1rem;
+      max-width: 90%;
+    }
+
+    .bubble-label {
+      font-size: 0.68rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.35rem;
+      opacity: 0.85;
+    }
+    .msg-row.voice .bubble-label { color: var(--voice); }
+
+    .meta-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem;
+      margin-top: 0.6rem;
+    }
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.2rem 0.5rem;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 6px;
+      font-size: 0.68rem;
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+    .msg-row.agent .chip {
+      background: var(--surface-2);
+      color: var(--text-secondary);
+    }
+    .chip.good { color: var(--success); }
+    .chip.warn { color: var(--warning); }
+    .chip.bad { color: var(--danger); }
+
+    .typing {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      align-self: flex-start;
+      padding: 0.5rem 0;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+    .typing-dots {
+      display: flex;
+      gap: 4px;
+    }
+    .typing-dots span {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--text-muted);
+      animation: bounce 1.2s infinite;
+    }
+    .typing-dots span:nth-child(2) { animation-delay: 0.15s; }
+    .typing-dots span:nth-child(3) { animation-delay: 0.3s; }
+    @keyframes bounce {
+      0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+      30% { transform: translateY(-4px); opacity: 1; }
+    }
+
+    /* ── Input area ── */
+    .composer {
+      flex-shrink: 0;
+      padding: 0.85rem 1rem 1rem;
+      padding-bottom: max(1rem, env(safe-area-inset-bottom));
+      padding-left: max(1rem, env(safe-area-inset-left));
+      padding-right: max(1rem, env(safe-area-inset-right));
+      background: rgba(17, 24, 32, 0.9);
+      backdrop-filter: blur(12px);
+      border-top: 1px solid var(--border);
+    }
+    @media (min-width: 768px) {
+      .composer { padding: 1rem 1.5rem 1.25rem; }
+    }
+
+    .composer-inner {
+      display: flex;
+      gap: 0.65rem;
+      align-items: flex-end;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
     textarea {
       flex: 1;
-      padding: 0.85rem 1rem;
-      background: var(--surface2);
+      padding: 0.8rem 1rem;
+      background: var(--surface-2);
       border: 1px solid var(--border);
       border-radius: var(--radius);
       color: var(--text);
-      font-size: 0.95rem;
+      font-size: 0.9375rem;
+      font-family: inherit;
       resize: none;
       min-height: 48px;
-      max-height: 120px;
-      font-family: inherit;
+      max-height: 140px;
+      line-height: 1.45;
+      transition: border-color var(--transition), box-shadow var(--transition);
     }
-    button.send {
-      padding: 0.85rem 1.5rem;
-      background: var(--accent);
-      border: none;
+
+    .composer .btn {
+      flex-shrink: 0;
+      min-width: 80px;
+      height: 48px;
       border-radius: var(--radius);
-      color: white;
-      font-weight: 600;
-      cursor: pointer;
-      font-size: 0.9rem;
-      transition: background 0.15s;
     }
-    button.send:hover { background: var(--accent-hover); }
-    button.send:disabled { opacity: 0.5; cursor: not-allowed; }
-    .typing {
-      align-self: flex-start;
-      color: var(--muted);
-      font-size: 0.85rem;
-      padding: 0.5rem 0;
+    @media (max-width: 479px) {
+      .composer .btn span { display: none; }
+      .composer .btn { min-width: 48px; padding: 0; }
     }
-    .message.system {
-      align-self: center;
-      max-width: 90%;
-      background: transparent;
-      border: 1px dashed var(--border);
-      color: var(--muted);
-      font-size: 0.8rem;
-      text-align: center;
-    }
-    .message.voice-agent {
-      align-self: flex-start;
-      background: #1a2e1a;
-      border: 1px solid #2d5a2d;
-      border-bottom-left-radius: 4px;
-    }
-    .message.voice-agent::before {
-      content: "🔊 Agent says: ";
-      font-size: 0.75rem;
-      color: var(--success);
-      display: block;
-      margin-bottom: 0.25rem;
-    }
+
+    .panel { display: none; }
+    .panel.active { display: block; }
+
     .voice-panel { display: none; }
     .voice-panel.active { display: block; }
-    .chat-panel.hidden { display: none; }
-    .call-btn {
-      width: 100%;
-      padding: 0.75rem;
-      background: var(--success);
-      border: none;
-      border-radius: 8px;
-      color: white;
-      font-weight: 600;
-      cursor: pointer;
-      margin-bottom: 0.5rem;
-    }
-    .call-btn:hover { filter: brightness(1.1); }
-    .call-info {
-      font-size: 0.75rem;
-      color: var(--muted);
-      padding: 0.5rem;
-      background: var(--surface2);
-      border-radius: 8px;
-      line-height: 1.6;
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+      }
     }
   </style>
 </head>
 <body>
   <header>
-    <h1>🎙️ <span>Voice Agents</span> Platform</h1>
-    <div class="status">
-      <div class="status-dot" id="statusDot"></div>
-      <span id="statusText">Checking...</span>
+    <button class="menu-btn" id="menuBtn" aria-label="Open settings panel" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+      </svg>
+    </button>
+
+    <div class="brand">
+      <div class="brand-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+          <path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/>
+        </svg>
+      </div>
+      <div class="brand-text">
+        <h1>Enterprise Support Agent Console</h1>
+        <p>Omnichannel AI operations</p>
+      </div>
     </div>
-    <div class="header-links">
-      <a href="/docs" target="_blank">API Docs</a>
-      <a href="/redoc" target="_blank">ReDoc</a>
+
+    <div class="header-modes" id="headerModes">
+      <button class="tab active" data-mode="chat" type="button">Chat</button>
+      <button class="tab" data-mode="copilot" type="button">Copilot</button>
+      <button class="tab" data-mode="voice" type="button">Voice</button>
+    </div>
+
+    <div class="header-actions">
+      <div class="status-pill">
+        <div class="status-dot" id="statusDot"></div>
+        <span id="statusText">Checking</span>
+      </div>
+      <a class="header-link" href="/docs" target="_blank" rel="noopener">API</a>
     </div>
   </header>
 
-  <div class="layout">
-    <aside class="sidebar">
+  <div class="app-shell">
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <aside class="sidebar" id="sidebar">
       <div>
-        <label>Mode</label>
-        <div class="tabs">
-          <button class="tab active" data-mode="chat">Chat</button>
-          <button class="tab" data-mode="copilot">Copilot</button>
-          <button class="tab" data-mode="voice">Voice</button>
+        <label class="field" style="display:block">
+          <span style="display:block;font-size:0.7rem;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted);margin-bottom:0.45rem">Channel</span>
+        </label>
+        <div class="tabs" id="sidebarTabs">
+          <button class="tab active" data-mode="chat" type="button">Chat</button>
+          <button class="tab" data-mode="copilot" type="button">Copilot</button>
+          <button class="tab" data-mode="voice" type="button">Voice</button>
         </div>
       </div>
+
       <div id="chatSidebar">
-        <div>
-          <label>Agent</label>
+        <div class="field">
+          <label for="agentSelect">Agent</label>
           <select id="agentSelect">
             <option value="chat_support">Chat Support</option>
             <option value="voice_support">Voice Support</option>
             <option value="copilot">Agent Copilot</option>
           </select>
         </div>
-        <div>
-          <label>Session ID</label>
-          <input type="text" id="sessionId" value="web-demo" />
+        <div class="field">
+          <label for="sessionId">Session ID</label>
+          <input type="text" id="sessionId" value="web-session" autocomplete="off" />
         </div>
       </div>
+
       <div id="voiceSidebar" class="voice-panel">
-        <div>
-          <label>Caller Number (PSTN)</label>
-          <input type="text" id="callerNumber" value="+15551234567" />
+        <div class="field">
+          <label for="callerNumber">Caller Number (PSTN)</label>
+          <input type="text" id="callerNumber" value="+15551234567" autocomplete="off" />
         </div>
-        <div>
-          <label>Call SID</label>
-          <input type="text" id="callSid" value="SIM-CALL-001" />
+        <div class="field">
+          <label for="callSid">Call SID</label>
+          <input type="text" id="callSid" value="SIM-CALL-001" autocomplete="off" />
         </div>
-        <button class="call-btn" onclick="answerCall()">📞 Answer Incoming Call</button>
+        <button class="btn btn-success" type="button" onclick="answerCall()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+          Answer Incoming Call
+        </button>
         <div class="call-info">
-          Simulates Twilio PSTN → webhook → voice agent → TTS response. No phone account needed.
+          Simulates PSTN inbound via Twilio webhooks — voice agent, speech gather, and human transfer routing.
         </div>
       </div>
+
       <div id="copilotContext" style="display:none">
-        <label>Conversation Summary (Copilot)</label>
-        <input type="text" id="conversationSummary" placeholder="Paste transcript summary..." />
+        <div class="field">
+          <label for="conversationSummary">Conversation Summary</label>
+          <input type="text" id="conversationSummary" placeholder="Paste transcript summary for copilot context..." />
+        </div>
       </div>
-      <button class="send" style="width:100%;margin-top:auto" onclick="clearChat()">Clear Chat</button>
+
+      <div class="sidebar-footer">
+        <button class="btn btn-ghost" type="button" onclick="clearChat()">Clear Session</button>
+      </div>
     </aside>
 
-    <main class="chat-area">
+    <main class="main">
       <div class="messages" id="messages">
         <div class="welcome" id="welcome">
+          <div class="welcome-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+          </div>
           <h2>Enterprise Support Agent Console</h2>
-          <p>Chat, copilot, RAG, and CRM operations — runs in offline mode when API keys are not configured.</p>
+          <p>Deploy chat, copilot, and voice operations with RAG grounding, CRM lookup, and telephony routing.</p>
           <div class="suggestions">
-            <button class="suggestion" onclick="sendSuggestion('How do I reset my password?')">Reset password</button>
-            <button class="suggestion" onclick="sendSuggestion('Can you look up jane@example.com?')">Lookup customer</button>
-            <button class="suggestion" onclick="sendSuggestion('I need to speak to a manager')">Escalate to human</button>
-            <button class="suggestion" onclick="sendSuggestion('My API calls return 403 errors')">API 403 error</button>
+            <button class="suggestion" type="button" onclick="sendSuggestion('How do I reset my password?')">Reset password</button>
+            <button class="suggestion" type="button" onclick="sendSuggestion('Can you look up jane@example.com?')">Lookup customer</button>
+            <button class="suggestion" type="button" onclick="sendSuggestion('I need to speak to a manager')">Escalate to human</button>
+            <button class="suggestion" type="button" onclick="sendSuggestion('My API calls return 403 errors')">API 403 error</button>
           </div>
         </div>
       </div>
-      <div class="input-area chat-panel" id="chatInput">
-        <div class="input-row">
-          <textarea id="input" rows="1" placeholder="Type your message..." onkeydown="handleKey(event)"></textarea>
-          <button class="send" id="sendBtn" onclick="sendMessage()">Send</button>
+
+      <div class="composer panel active" id="chatInput">
+        <div class="composer-inner">
+          <textarea id="input" rows="1" placeholder="Type your message..." aria-label="Message input" onkeydown="handleKey(event)"></textarea>
+          <button class="btn btn-primary" id="sendBtn" type="button" onclick="sendMessage()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            <span>Send</span>
+          </button>
         </div>
       </div>
-      <div class="input-area voice-panel" id="voiceInput">
-        <div class="input-row">
-          <textarea id="voiceInputText" rows="1" placeholder="What does the caller say? (speech-to-text)..." onkeydown="handleVoiceKey(event)"></textarea>
-          <button class="send" id="voiceSendBtn" onclick="sendVoiceSpeech()">Speak</button>
+
+      <div class="composer voice-panel" id="voiceInput">
+        <div class="composer-inner">
+          <textarea id="voiceInputText" rows="1" placeholder="Caller speech (STT simulation)..." aria-label="Voice input" onkeydown="handleVoiceKey(event)"></textarea>
+          <button class="btn btn-primary" id="voiceSendBtn" type="button" onclick="sendVoiceSpeech()" style="background:var(--voice)">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
+            <span>Speak</span>
+          </button>
         </div>
       </div>
     </main>
@@ -372,9 +816,38 @@
     let mode = 'chat';
     let callActive = false;
 
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+
+    function openSidebar() {
+      sidebar.classList.add('open');
+      overlay.classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeSidebar() {
+      sidebar.classList.remove('open');
+      overlay.classList.remove('open');
+      document.body.style.overflow = '';
+    }
+
+    document.getElementById('menuBtn').addEventListener('click', () => {
+      sidebar.classList.contains('open') ? closeSidebar() : openSidebar();
+    });
+    overlay.addEventListener('click', closeSidebar);
+
+    window.addEventListener('resize', () => {
+      if (window.innerWidth >= 900) closeSidebar();
+    });
+
+    function setActiveTabs(newMode) {
+      document.querySelectorAll('.tab[data-mode]').forEach(t => {
+        t.classList.toggle('active', t.dataset.mode === newMode);
+      });
+    }
+
     function setMode(newMode) {
       mode = newMode;
-      document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.mode === mode));
+      setActiveTabs(newMode);
 
       const chatSidebar = document.getElementById('chatSidebar');
       const voiceSidebar = document.getElementById('voiceSidebar');
@@ -386,30 +859,50 @@
       const isVoice = mode === 'voice';
       chatSidebar.style.display = isVoice ? 'none' : 'block';
       voiceSidebar.classList.toggle('active', isVoice);
-      chatInput.classList.toggle('hidden', isVoice);
+      chatInput.classList.toggle('active', !isVoice);
+      chatInput.classList.toggle('panel', true);
       voiceInput.classList.toggle('active', isVoice);
       copilotCtx.style.display = mode === 'copilot' ? 'block' : 'none';
 
       if (mode === 'copilot') agent.value = 'copilot';
-      else if (mode === 'voice') { /* voice uses telephony endpoint */ }
-      else agent.value = 'chat_support';
+      else if (mode === 'chat') agent.value = 'chat_support';
 
-      if (isVoice && !callActive) {
-        showVoiceWelcome();
-      }
+      if (isVoice && !callActive) showVoiceWelcome();
+      closeSidebar();
+    }
+
+    document.querySelectorAll('.tab[data-mode]').forEach(tab => {
+      tab.addEventListener('click', () => setMode(tab.dataset.mode));
+    });
+
+    function welcomeHtml(title, subtitle, suggestions) {
+      const sug = suggestions.map(s => {
+        const fn = s.fn || `sendSuggestion('${s.text.replace(/'/g, "\\'")}')`;
+        return `<button class="suggestion" type="button" onclick="${fn}">${s.label}</button>`;
+      }).join('');
+      return `
+        <div class="welcome" id="welcome">
+          <div class="welcome-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+            </svg>
+          </div>
+          <h2>${title}</h2>
+          <p>${subtitle}</p>
+          <div class="suggestions">${sug}</div>
+        </div>`;
     }
 
     function showVoiceWelcome() {
-      document.getElementById('messages').innerHTML = `
-        <div class="welcome" id="welcome">
-          <h2>📞 Voice Call Simulator</h2>
-          <p>Simulates PSTN → Twilio/CCaaS → SIP webhook → AI voice agent</p>
-          <div class="suggestions">
-            <button class="suggestion" onclick="answerCall()">Answer incoming call</button>
-            <button class="suggestion" onclick="sendVoiceSuggestion('How do I reset my password?')">Ask about password</button>
-            <button class="suggestion" onclick="sendVoiceSuggestion('I need to speak to a manager')">Request transfer</button>
-          </div>
-        </div>`;
+      document.getElementById('messages').innerHTML = welcomeHtml(
+        'Voice Call Simulator',
+        'PSTN inbound via Twilio — speech gather, AI response, and escalation routing.',
+        [
+          { label: 'Answer incoming call', fn: 'answerCall()' },
+          { label: 'Ask about password', fn: "sendVoiceSuggestion('How do I reset my password?')" },
+          { label: 'Request transfer', fn: "sendVoiceSuggestion('I need to speak to a manager')" },
+        ]
+      );
     }
 
     async function checkHealth() {
@@ -423,15 +916,8 @@
       }
     }
 
-    document.querySelectorAll('.tab').forEach(tab => {
-      tab.addEventListener('click', () => setMode(tab.dataset.mode));
-    });
-
     function handleKey(e) {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        sendMessage();
-      }
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
     }
 
     function sendSuggestion(text) {
@@ -442,22 +928,81 @@
     function clearChat() {
       callActive = false;
       if (mode === 'voice') showVoiceWelcome();
-      else document.getElementById('messages').innerHTML = `
-        <div class="welcome" id="welcome">
-          <h2>Enterprise Support Agent Console</h2>
-          <p>Session cleared. Start a new conversation.</p>
-        </div>`;
+      else document.getElementById('messages').innerHTML = welcomeHtml(
+        'Enterprise Support Agent Console',
+        'Session cleared. Start a new conversation.',
+        []
+      );
+      closeSidebar();
     }
 
-    function addMessage(text, role, meta = '') {
+    function buildMetaChips(metrics, tools) {
+      const chips = [];
+      if (tools?.length) chips.push({ text: `Tools: ${tools.join(', ')}` });
+      if (metrics?.response_time_ms != null) chips.push({ text: `${metrics.response_time_ms}ms` });
+      if (metrics?.mode) chips.push({ text: metrics.mode });
+      if (metrics?.grounding_score != null) {
+        const g = metrics.grounding_score;
+        const cls = g >= 0.4 ? 'good' : g >= 0.2 ? 'warn' : 'bad';
+        chips.push({ text: `Grounding ${(g * 100).toFixed(0)}%`, cls });
+      }
+      if (metrics?.hallucination_risk) {
+        const cls = metrics.hallucination_risk === 'low' ? 'good' : metrics.hallucination_risk === 'medium' ? 'warn' : 'bad';
+        chips.push({ text: `Risk: ${metrics.hallucination_risk}`, cls });
+      }
+      if (!chips.length) return '';
+      return `<div class="meta-chips">${chips.map(c => `<span class="chip ${c.cls || ''}">${c.text}</span>`).join('')}</div>`;
+    }
+
+    function addMessage(text, role, metrics = null, tools = []) {
       const welcome = document.getElementById('welcome');
       if (welcome) welcome.remove();
 
-      const div = document.createElement('div');
-      div.className = `message ${role}`;
-      div.innerHTML = text + (meta ? `<div class="meta">${meta}</div>` : '');
-      document.getElementById('messages').appendChild(div);
-      div.scrollIntoView({ behavior: 'smooth' });
+      const row = document.createElement('div');
+      const isVoice = role === 'voice-agent';
+      const rowRole = isVoice ? 'voice' : role;
+      row.className = `msg-row ${rowRole}`;
+
+      const avatarLabel = role === 'user' ? 'You' : isVoice ? 'VA' : 'AI';
+      const bubbleContent = isVoice
+        ? `<div class="bubble-label">Agent Response (TTS)</div>${escapeHtml(text)}`
+        : escapeHtml(text);
+
+      row.innerHTML = `
+        <div class="avatar">${avatarLabel}</div>
+        <div class="bubble">${bubbleContent}${buildMetaChips(metrics, tools)}</div>`;
+
+      document.getElementById('messages').appendChild(row);
+      row.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }
+
+    function addSystemMessage(text) {
+      const welcome = document.getElementById('welcome');
+      if (welcome) welcome.remove();
+      const row = document.createElement('div');
+      row.className = 'msg-row system';
+      row.innerHTML = `<div class="bubble">${escapeHtml(text)}</div>`;
+      document.getElementById('messages').appendChild(row);
+      row.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }
+
+    function escapeHtml(str) {
+      const d = document.createElement('div');
+      d.textContent = str;
+      return d.innerHTML;
+    }
+
+    function showTyping(msg) {
+      const el = document.createElement('div');
+      el.className = 'typing';
+      el.id = 'typing';
+      el.innerHTML = `<div class="typing-dots"><span></span><span></span><span></span></div><span>${msg}</span>`;
+      document.getElementById('messages').appendChild(el);
+      el.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }
+
+    function hideTyping() {
+      document.getElementById('typing')?.remove();
     }
 
     async function sendMessage() {
@@ -470,57 +1015,35 @@
       input.value = '';
       addMessage(text, 'user');
 
-      const typing = document.createElement('div');
-      typing.className = 'typing';
-      typing.id = 'typing';
-      typing.textContent = 'Agent is thinking...';
-      document.getElementById('messages').appendChild(typing);
+      showTyping('Agent processing...');
 
-      const sessionId = document.getElementById('sessionId').value || 'web-demo';
+      const sessionId = document.getElementById('sessionId').value || 'web-session';
       const agentId = document.getElementById('agentSelect').value;
 
       try {
-        let res, data;
-        if (mode === 'copilot') {
-          res = await fetch(`${API}/copilot`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              message: text,
-              agent_id: agentId,
-              conversation_summary: document.getElementById('conversationSummary').value,
-            }),
-          });
-        } else {
-          res = await fetch(`${API}/chat`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              message: text,
-              agent_id: agentId,
-              session_id: sessionId,
-            }),
-          });
-        }
+        const endpoint = mode === 'copilot' ? 'copilot' : 'chat';
+        const body = mode === 'copilot'
+          ? { message: text, agent_id: agentId, conversation_summary: document.getElementById('conversationSummary').value }
+          : { message: text, agent_id: agentId, session_id: sessionId };
 
-        document.getElementById('typing')?.remove();
+        const res = await fetch(`${API}/${endpoint}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+
+        hideTyping();
         const contentType = res.headers.get('content-type') || '';
         if (!contentType.includes('application/json')) {
-          const text = await res.text();
-          throw new Error(text.slice(0, 200) || `Server error (${res.status})`);
+          throw new Error((await res.text()).slice(0, 200) || `Server error (${res.status})`);
         }
-        data = await res.json();
-
+        const data = await res.json();
         if (!res.ok) throw new Error(data.detail || 'Request failed');
 
-        const response = data.response || JSON.stringify(data);
-        const tools = (data.tool_calls || []).map(t => t.name).join(', ');
-        const ms = data.metrics?.response_time_ms;
-        const meta = [tools && `Tools: ${tools}`, ms && `${ms}ms`, data.metrics?.mode].filter(Boolean).join(' · ');
-
-        addMessage(response, 'agent', meta);
+        const tools = (data.tool_calls || []).map(t => t.name);
+        addMessage(data.response || JSON.stringify(data), 'agent', data.metrics, tools);
       } catch (err) {
-        document.getElementById('typing')?.remove();
+        hideTyping();
         addMessage(`Error: ${err.message}`, 'agent');
       }
 
@@ -529,18 +1052,16 @@
     }
 
     function handleVoiceKey(e) {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        sendVoiceSpeech();
-      }
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendVoiceSpeech(); }
     }
 
     function sendVoiceSuggestion(text) {
-      if (!callActive) answerCall().then(() => {
-        document.getElementById('voiceInputText').value = text;
-        sendVoiceSpeech();
-      });
-      else {
+      if (!callActive) {
+        answerCall().then(() => {
+          document.getElementById('voiceInputText').value = text;
+          sendVoiceSpeech();
+        });
+      } else {
         document.getElementById('voiceInputText').value = text;
         sendVoiceSpeech();
       }
@@ -548,10 +1069,8 @@
 
     async function answerCall() {
       callActive = true;
-      const welcome = document.getElementById('welcome');
-      if (welcome) welcome.remove();
-
-      addMessage('📞 Incoming PSTN call...', 'system');
+      document.getElementById('welcome')?.remove();
+      addSystemMessage('Incoming PSTN call — connecting to voice agent...');
       return simulateVoice(null);
     }
 
@@ -562,14 +1081,13 @@
 
       if (!callActive) {
         callActive = true;
-        const welcome = document.getElementById('welcome');
-        if (welcome) welcome.remove();
+        document.getElementById('welcome')?.remove();
       }
 
       const btn = document.getElementById('voiceSendBtn');
       btn.disabled = true;
       input.value = '';
-      addMessage(`🎤 Caller: "${text}"`, 'user');
+      addMessage(text, 'user');
 
       await simulateVoice(text);
       btn.disabled = false;
@@ -577,11 +1095,7 @@
     }
 
     async function simulateVoice(speech) {
-      const typing = document.createElement('div');
-      typing.className = 'typing';
-      typing.id = 'typing';
-      typing.textContent = 'Processing speech via voice webhook...';
-      document.getElementById('messages').appendChild(typing);
+      showTyping('Processing via voice webhook...');
 
       try {
         const res = await fetch(`${API}/telephony/simulate`, {
@@ -593,28 +1107,33 @@
             speech: speech,
           }),
         });
-        document.getElementById('typing')?.remove();
+        hideTyping();
         const data = await res.json();
         if (!res.ok) throw new Error(data.detail || 'Simulation failed');
 
-        if (data.agent_says) {
-          addMessage(data.agent_says, 'voice-agent');
-        }
+        if (data.agent_says) addMessage(data.agent_says, 'voice-agent');
 
         const metaParts = [];
         if (data.listening) metaParts.push('Listening for speech');
         if (data.transfer_to) metaParts.push(`Transfer → ${data.transfer_to}`);
         if (data.routing?.destination) metaParts.push(`Route → ${data.routing.destination}`);
         if (data.call_actions?.length) metaParts.push(data.call_actions.join(' | '));
-
-        if (metaParts.length) {
-          addMessage(`Telephony: ${metaParts.join(' · ')}`, 'system');
-        }
+        if (metaParts.length) addSystemMessage(`Telephony: ${metaParts.join(' · ')}`);
       } catch (err) {
-        document.getElementById('typing')?.remove();
+        hideTyping();
         addMessage(`Error: ${err.message}`, 'agent');
       }
     }
+
+    // Auto-resize textareas
+    function autoResize(el) {
+      el.style.height = 'auto';
+      el.style.height = Math.min(el.scrollHeight, 140) + 'px';
+    }
+    ['input', 'voiceInputText'].forEach(id => {
+      const el = document.getElementById(id);
+      el.addEventListener('input', () => autoResize(el));
+    });
 
     checkHealth();
     document.getElementById('input').focus();
