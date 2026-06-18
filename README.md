@@ -51,7 +51,19 @@ Nexus packages all of this into a single FastAPI application with a built-in **N
 | **Voice** | `voice_support` | PSTN call flows via Twilio webhooks; in-browser simulator for dev |
 | **Copilot** | `copilot` | Drafts responses for human agents from conversation context |
 
-> **No API key required for local dev.** Without `OPENAI_API_KEY`, the platform uses a mock LLM and keyword RAG fallback — chat, voice simulator, and all 65+ tests still work.
+> **No API key required for local dev.** Without `OPENAI_API_KEY`, the platform uses a mock LLM and keyword RAG fallback — chat, voice simulator, and all **75+ tests** still work.
+
+### Optional integrations (no keys required to start)
+
+| Provider | Purpose | Configure via |
+|----------|---------|---------------|
+| **OpenAI** | LLM, embeddings, STT, TTS | `.env` or Nexus **Integrations** panel |
+| **Anthropic** | LLM (copilot / chat) | `.env` or UI |
+| **Twilio** | Real PSTN voice calls | `.env` or UI |
+| **HubSpot** | CRM lookup & tickets | `.env` or UI |
+| **n8n / Zapier** | Workflow webhooks on lifecycle events | UI or API |
+
+Credentials saved in the UI are **encrypted at rest** (Fernet) in `data/integrations.vault`. Mock mode works when nothing is configured.
 
 ---
 
@@ -66,7 +78,8 @@ Nexus packages all of this into a single FastAPI application with a built-in **N
 | **CRM** | HubSpot adapter with mock fallback when credentials are absent |
 | **iPaaS** | Outbound webhooks for conversation/ticket/escalation events |
 | **Evaluation** | Automated suites for containment, tool accuracy, latency, benchmarks |
-| **Console** | Nexus web UI — streaming chat, voice HUD, sessions, citation chips |
+| **Console** | Nexus web UI — streaming chat, voice HUD, sessions, citation chips, integrations manager |
+| **Secrets vault** | Fernet-encrypted credential storage with masked API responses |
 | **CI/CD** | GitHub Actions: unit, E2E, Docker smoke — fully offline |
 
 ---
@@ -279,6 +292,7 @@ flowchart LR
 | Integration | Call Router | Skill routing, VIP, SIP headers | `src/telephony/call_router.py` |
 | Integration | CRM Adapter | HubSpot contact lookup | `src/integrations/crm.py` |
 | Integration | Webhooks | iPaaS lifecycle events | `src/integrations/webhooks.py` |
+| Integration | Secrets Vault | Encrypted API keys & webhook URLs | `src/integrations/secrets_vault.py` |
 | Knowledge | RAG Pipeline | Ingestion, chunking, embedding | `src/rag/ingestion.py` |
 | Knowledge | Retriever | Semantic + keyword fallback | `src/rag/retriever.py` |
 | Knowledge | Vector Store | ChromaDB + score normalization | `src/rag/vector_store.py` |
@@ -340,7 +354,7 @@ curl -s -X POST http://127.0.0.1:8001/api/v1/chat \
 
 ## Web console
 
-The **Nexus AI Ops** console (`static/index.html`) includes:
+The **Nexus AI Ops** console (`static/index.html`) at [http://127.0.0.1:8001](http://127.0.0.1:8001):
 
 | Tab | Try these prompts |
 |-----|-------------------|
@@ -348,7 +362,22 @@ The **Nexus AI Ops** console (`static/index.html`) includes:
 | **Copilot** | Paste a conversation summary → get a draft response for the human agent |
 | **Voice** | Answer call → type caller speech → request escalation to test transfer routing |
 
-Features: streaming responses, session history, clear session, RAG citation chips, voice HUD with STT/TTS simulation.
+### Console features
+
+- **Streaming chat** with RAG citation chips and grounding metrics
+- **Session management** — history, clear session, per-session delete
+- **Voice HUD** — call timer, waveform, STT/TTS simulation
+- **Collapsible side panel** — click the main chat area to slide the panel closed; reopen with **☰** (header) or the **› Panel** tab on the left edge
+- **Integrations manager** (sidebar → Integrations) — configure OpenAI, Anthropic, Twilio, HubSpot, and n8n/Zapier without editing files
+
+### Integrations panel
+
+1. Open **☰** menu → scroll to **Integrations**
+2. Enter API keys or webhook URLs → **Save encrypted**
+3. Saved keys show masked values (e.g. `sk-p••••IP0A`) with **Change** and **Remove**
+4. **Remove** shows a confirmation dialog before deleting from the vault
+
+Works alongside `.env` — vault values override env when both are set.
 
 ---
 
@@ -404,6 +433,10 @@ Three agents are defined in `config/agents.yaml`:
 | `POST` | `/api/v1/telephony/voice/inbound` | Twilio inbound webhook |
 | `POST` | `/api/v1/telephony/voice/process` | Twilio speech webhook |
 | `POST` | `/api/v1/integrations/webhooks` | Register iPaaS webhook URL |
+| `DELETE` | `/api/v1/integrations/webhooks/{event_type}` | Remove webhook URL |
+| `GET` | `/api/v1/integrations/status` | Integration status (masked keys) |
+| `PUT` | `/api/v1/integrations/credentials` | Save encrypted API keys |
+| `DELETE` | `/api/v1/integrations/credentials/{key}` | Remove a stored credential |
 | `POST` | `/api/v1/evaluation/run` | Run automated evaluation suite |
 
 ---
@@ -493,13 +526,19 @@ voice-agents/
 │   ├── rag/                        # Ingestion, vector store, retriever
 │   ├── llm/                        # Factory, guardrails, grounding
 │   ├── telephony/                  # Twilio, call router, STT/TTS
-│   ├── integrations/               # CRM & webhook code
+│   ├── integrations/               # CRM, webhooks, encrypted secrets vault
+│   │   ├── secrets_vault.py        # Fernet credential storage
+│   │   ├── webhooks.py
+│   │   └── crm.py
 │   ├── evaluation/                 # Quality evaluator
 │   └── prompts/                    # Channel prompt templates
 ├── static/
 │   └── index.html                  # Nexus AI Ops console
 ├── tests/
 │   ├── test_*.py                   # Unit & integration tests
+│   ├── test_secrets_vault.py       # Encrypted vault tests
+│   ├── test_integrations_api.py    # Integrations API tests
+│   ├── test_vector_store.py        # RAG score normalization tests
 │   ├── e2e/                        # End-to-end user journey tests
 │   └── reports/                    # CI reports (XML gitignored)
 ├── .github/workflows/ci.yml        # GitHub Actions pipeline
@@ -530,13 +569,19 @@ Copy `.env.example` → `.env`:
 
 ### Encrypted integrations (UI or API)
 
-Optional providers can be configured in the **Nexus sidebar → Integrations** panel or via API. Credentials are encrypted at rest in `data/integrations.vault` (Fernet). Vault values override `.env` when both are set. API responses only show masked keys.
+Optional providers can be configured in the **Nexus sidebar → Integrations** panel or via API. Credentials are encrypted at rest in `data/integrations.vault` (Fernet, AES). Vault values override `.env` when both are set. API responses only show **masked** keys — never full secrets.
 
 | Endpoint | Description |
 |----------|-------------|
-| `GET /api/v1/integrations/status` | Provider status (masked) |
+| `GET /api/v1/integrations/status` | Provider status (masked keys, webhook state) |
 | `PUT /api/v1/integrations/credentials` | Save encrypted API keys |
+| `DELETE /api/v1/integrations/credentials/{key}` | Remove one credential |
 | `POST /api/v1/integrations/webhooks` | Register n8n/Zapier webhook URL |
+| `DELETE /api/v1/integrations/webhooks/{event_type}` | Remove webhook URL |
+
+**Production:** set `INTEGRATIONS_ENCRYPTION_KEY` for a stable vault key and `SETTINGS_ADMIN_TOKEN` to require `X-Settings-Token` on save/delete requests.
+
+**Storage files** (gitignored): `data/integrations.vault`, `data/.vault_key`
 
 ---
 
