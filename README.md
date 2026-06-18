@@ -1,192 +1,334 @@
 # Enterprise Voice & Chat AI Agent Platform
 
-A production-ready platform demonstrating the full stack of an **AI Agent Engineer** role: voice agents, chat agents, AI copilots, RAG, telephony, CRM integrations, evaluation frameworks, and workflow orchestration.
+A full-stack **enterprise AI agent platform** for building, testing, and demoing voice agents, chat agents, and agent copilots — with RAG, CRM integrations, telephony (Twilio/SIP/PSTN), evaluation frameworks, and iPaaS webhooks.
 
-Built to showcase hands-on skills in prompt design, API integration, telephony (Twilio/SIP/PSTN), LLM orchestration (LangChain/LangGraph), and enterprise deployment patterns.
+Built as a portfolio and interview-ready reference for **AI Agent Engineer**, **Solutions Engineer**, and **Conversational AI** roles.
+
+**Repository:** [github.com/ShubhamRSY/voice-agents](https://github.com/ShubhamRSY/voice-agents)
+
+---
+
+## Overview
+
+This platform simulates how a real enterprise would deploy AI support agents across multiple channels:
+
+| Channel | What it does |
+|---------|----------------|
+| **Chat** | Text-based support with tool calling and session memory |
+| **Voice** | PSTN/CCaaS call flow via Twilio webhooks (with in-browser simulator) |
+| **Copilot** | Agent-assist that drafts responses for human support reps |
+
+Agents can search a knowledge base (RAG), look up customers (CRM), create tickets, escalate to humans, and emit events to external systems (n8n/Zapier).
+
+---
+
+## Features
+
+- **Multi-agent orchestration** — LangGraph ReAct agents with configurable tools per agent
+- **Prompt design** — Channel-specific templates for voice, chat, and copilot (`src/prompts/templates.py`)
+- **RAG pipeline** — Document ingestion, ChromaDB vector store, keyword + semantic retrieval
+- **LLM providers** — OpenAI, Anthropic, Gemini via unified factory; mock fallback when no API key
+- **Telephony** — Twilio voice webhooks, TwiML generation, call routing, SIP header extraction, human transfer
+- **CRM integration** — HubSpot adapter with mock fallback for demos
+- **iPaaS webhooks** — Outbound events for n8n/Zapier (`integrations/templates/`)
+- **Evaluation framework** — Automated test suites for containment, tool accuracy, and latency
+- **Web UI** — Chat, Copilot, and Voice Call Simulator at `http://127.0.0.1:8001/`
+- **REST API** — Full FastAPI surface with OpenAPI docs at `/docs`
+
+---
 
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                     FastAPI Gateway                          │
-│  /chat  /copilot  /telephony  /rag  /evaluation  /agents    │
-└──────────┬──────────┬──────────┬──────────┬──────────────────┘
-           │          │          │          │
-    ┌──────▼──┐ ┌─────▼────┐ ┌──▼───┐ ┌───▼────────┐
-    │  Chat   │ │  Voice   │ │ Copilot│ │ Evaluation│
-    │  Agent  │ │  Agent   │ │ Agent  │ │ Framework │
-    └──────┬──┘ └─────┬────┘ └───┬───┘ └───────────┘
-           │          │          │
-    ┌──────▼──────────▼──────────▼──────────────────┐
-    │           LangGraph Orchestrator               │
-    │    (Prompt Templates + Tool Calling + RAG)     │
-    └──────┬──────────┬──────────┬──────────────────┘
-           │          │          │
-    ┌──────▼──┐ ┌─────▼────┐ ┌──▼────────┐
-    │ ChromaDB│ │ HubSpot  │ │  Twilio   │
-    │  (RAG)  │ │  (CRM)   │ │ (Voice)   │
-    └─────────┘ └──────────┘ └───────────┘
+┌──────────────────────────────────────────────────────────────┐
+│                    Web UI  +  FastAPI Gateway                 │
+│         /          /api/v1/chat   /copilot   /telephony     │
+└──────────┬──────────────┬──────────────┬────────────────────┘
+           │              │              │
+    ┌──────▼──────┐ ┌─────▼─────┐ ┌─────▼──────┐
+    │ Chat Agent  │ │  Copilot  │ │ Voice Agent │
+    └──────┬──────┘ └─────┬─────┘ └─────┬──────┘
+           │              │              │
+    ┌──────▼──────────────▼──────────────▼──────────────────┐
+    │              LangGraph Orchestrator                    │
+    │        Prompts + Tool Calling + RAG Context            │
+    └──────┬──────────────┬──────────────┬──────────────────┘
+           │              │              │
+    ┌──────▼──────┐ ┌─────▼─────┐ ┌─────▼──────┐
+    │  ChromaDB   │ │  HubSpot  │ │   Twilio   │
+    │    (RAG)    │ │   (CRM)   │ │  (Voice)   │
+    └─────────────┘ └───────────┘ └────────────┘
 ```
 
-## What's Included
+---
 
-| Capability | Implementation |
-|---|---|
-| **Voice Agents** | Twilio webhook handlers, speech-to-text, TTS responses, human transfer |
-| **Chat Agents** | REST API with session management, tool calling |
-| **AI Copilot** | Agent-assist with draft responses and conversation summaries |
-| **Prompt Design** | Channel-specific templates (voice/chat/copilot) with YAML config |
-| **RAG Pipeline** | Document ingestion, chunking, ChromaDB vector store, retrieval |
-| **LLM Support** | OpenAI, Anthropic, Gemini via unified factory |
-| **Orchestration** | LangGraph ReAct agents with tool routing |
-| **CRM Integration** | HubSpot API adapter with mock fallback |
-| **Webhooks / iPaaS** | n8n/Zapier-compatible event dispatch |
-| **Telephony** | SIP header extraction, call routing, fallback config |
-| **Evaluation** | Test suites measuring containment, tool accuracy, latency |
+## Tech Stack
+
+| Layer | Technology |
+|-------|------------|
+| API | FastAPI, Uvicorn |
+| Orchestration | LangChain, LangGraph |
+| LLMs | OpenAI GPT-4o-mini, Anthropic, Gemini |
+| Vector DB | ChromaDB |
+| Telephony | Twilio (TwiML, webhooks) |
+| CRM | HubSpot REST API |
+| Testing | pytest |
+| Frontend | HTML/CSS/JS (single-page UI) |
+
+---
 
 ## Quick Start
 
-### 1. Setup
+### Prerequisites
+
+- Python 3.11+
+- (Optional) OpenAI API key for real LLM responses
+
+### 1. Clone and install
 
 ```bash
-python -m venv .venv
+git clone https://github.com/ShubhamRSY/voice-agents.git
+cd voice-agents
+
+python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-cp .env.example .env
-# Optional: add your OPENAI_API_KEY (and optionally ANTHROPIC_API_KEY, Twilio creds)
+pip install -e .
 ```
 
-### Credential-free demo mode (recommended to start)
+### 2. Configure environment (optional)
 
-This repo supports a **no-keys-required** demo mode:
+```bash
+cp .env.example .env
+# Edit .env and add your OPENAI_API_KEY
+```
 
-- Agents run in `mock` mode (rule-based tool selection)
-- RAG uses local deterministic embeddings (no OpenAI embeddings required)
-- CRM uses a mock fallback unless you add HubSpot creds
+> **No API key?** The platform falls back to mock mode automatically — chat, voice simulator, and tests still work.
 
-You can run everything (API, tests, demo scripts) without any external accounts.
-
-### 2. Ingest Knowledge Base
+### 3. Ingest the sample knowledge base
 
 ```bash
 python scripts/ingest_kb.py data/knowledge_base/
 ```
 
-### 3. Start the Server
+### 4. Start the server
 
 ```bash
-python -m src.main
-# API docs at http://localhost:8000/docs
+./run.sh
 ```
 
-### 4. Try It
+### 5. Open the app
+
+| URL | Description |
+|-----|-------------|
+| [http://127.0.0.1:8001/](http://127.0.0.1:8001/) | Web UI (Chat, Copilot, Voice) |
+| [http://127.0.0.1:8001/docs](http://127.0.0.1:8001/docs) | Interactive API documentation |
+
+---
+
+## Web UI
+
+The built-in UI has three modes:
+
+### Chat
+Test the support agent with natural language. Try:
+- `How do I reset my password?`
+- `Can you look up jane@example.com?`
+- `My API calls return 403 errors`
+
+### Copilot
+Paste a conversation summary and ask the copilot to draft a response for the human agent.
+
+### Voice (Call Simulator)
+Simulates a PSTN phone call without Twilio:
+1. Click **Answer Incoming Call** — hear the agent greeting (TTS simulation)
+2. Type what the caller says — e.g. `How do I reset my password?`
+3. Try escalation — `I need to speak to a manager`
+
+Shows telephony metadata: routing, transfer numbers, gather/listen states.
+
+---
+
+## Agents
+
+Three agents are configured in `config/agents.yaml`:
+
+| Agent ID | Channel | Tools |
+|----------|---------|-------|
+| `chat_support` | Chat | lookup_customer, search_knowledge_base, create_ticket, update_crm |
+| `voice_support` | Voice | lookup_customer, search_knowledge_base, create_ticket, transfer_to_human |
+| `copilot` | Copilot | search_knowledge_base, draft_response, summarize_conversation |
+
+Each agent has its own LLM model, temperature, token limits, and containment targets.
+
+---
+
+## API Reference
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/v1/health` | Health check |
+| `POST` | `/api/v1/chat` | Send a chat message |
+| `POST` | `/api/v1/copilot` | Copilot assist request |
+| `DELETE` | `/api/v1/chat/{session_id}` | End a chat session |
+| `GET` | `/api/v1/agents` | List configured agents |
+| `POST` | `/api/v1/rag/ingest` | Ingest documents into vector store |
+| `POST` | `/api/v1/rag/search` | Search knowledge base |
+| `POST` | `/api/v1/telephony/simulate` | Simulate a voice call (no Twilio needed) |
+| `POST` | `/api/v1/telephony/voice/inbound` | Twilio inbound webhook |
+| `POST` | `/api/v1/telephony/voice/process` | Twilio speech processing webhook |
+| `POST` | `/api/v1/telephony/voice/status` | Twilio call status callback |
+| `POST` | `/api/v1/integrations/webhooks` | Register iPaaS webhook URL |
+| `POST` | `/api/v1/evaluation/run` | Run automated evaluation suite |
+
+### Example: Chat
 
 ```bash
-# Chat with the agent
-curl -X POST http://localhost:8000/api/v1/chat \
+curl -X POST http://127.0.0.1:8001/api/v1/chat \
   -H "Content-Type: application/json" \
-  -d '{"message": "How do I reset my password?", "session_id": "demo-1"}'
-
-# Search knowledge base
-curl -X POST "http://localhost:8000/api/v1/rag/search?query=API+rate+limits&top_k=3"
-
-# List configured agents
-curl http://localhost:8000/api/v1/agents
-
-# Run evaluation suite (requires API key)
-python scripts/run_evaluation.py
+  -d '{
+    "message": "How do I reset my password?",
+    "session_id": "demo-1",
+    "agent_id": "chat_support"
+  }'
 ```
 
-## Telephony Setup (Twilio)
-
-1. Set `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, and `TWILIO_PHONE_NUMBER` in `.env`
-2. Expose your local server with ngrok: `ngrok http 8000`
-3. Set `TWILIO_WEBHOOK_BASE_URL` to your ngrok URL
-4. Configure your Twilio phone number voice webhook to:
-   - **Inbound**: `POST {WEBHOOK_BASE_URL}/api/v1/telephony/voice/inbound`
-   - **Status callback**: `POST {WEBHOOK_BASE_URL}/api/v1/telephony/voice/status`
-
-## iPaaS (n8n / Zapier) Integrations
-
-This platform emits lifecycle events (conversation started/ended, ticket created, escalations) to external systems via webhooks, which can be wired into iPaaS tools like **n8n** or **Zapier**.
-
-### Event schema
-
-Every outbound webhook payload is:
-
-```json
-{ "event": "conversation.started", "data": { "...": "..." } }
-```
-
-If you configure a shared secret (see below), the request includes an HMAC signature header:
-
-- `X-Webhook-Signature`: hex sha256 of the raw request body
-
-### Register a webhook URL
+### Example: Voice simulation
 
 ```bash
-curl -X POST http://localhost:8000/api/v1/integrations/webhooks \
+curl -X POST http://127.0.0.1:8001/api/v1/telephony/simulate \
+  -H "Content-Type: application/json" \
+  -d '{
+    "call_sid": "SIM-001",
+    "from_number": "+15551234567",
+    "speech": "How do I reset my password?"
+  }'
+```
+
+---
+
+## Telephony (Real Phone Calls via Twilio)
+
+To connect a real phone number:
+
+1. Add Twilio credentials to `.env`:
+   ```
+   TWILIO_ACCOUNT_SID=AC...
+   TWILIO_AUTH_TOKEN=...
+   TWILIO_PHONE_NUMBER=+1...
+   TWILIO_WEBHOOK_BASE_URL=https://your-ngrok-url.ngrok.io
+   ```
+
+2. Expose your local server:
+   ```bash
+   ngrok http 8001
+   ```
+
+3. Set your Twilio phone number voice webhook to:
+   - **Inbound:** `POST {WEBHOOK_BASE_URL}/api/v1/telephony/voice/inbound`
+   - **Status callback:** `POST {WEBHOOK_BASE_URL}/api/v1/telephony/voice/status`
+
+Call routing supports skill-based rules, VIP caller detection, SIP `X-*` header extraction, and fallback destinations (`src/telephony/call_router.py`).
+
+---
+
+## iPaaS Integrations (n8n / Zapier)
+
+The platform emits lifecycle events to external webhook URLs:
+
+| Event | When |
+|-------|------|
+| `conversation.started` | New chat session begins |
+| `conversation.ended` | Session closed |
+| `ticket.created` | Support ticket created |
+| `conversation.escalated` | Human transfer requested |
+
+**Register a webhook:**
+```bash
+curl -X POST http://127.0.0.1:8001/api/v1/integrations/webhooks \
   -H "Content-Type: application/json" \
   -d '{"event_type":"conversation.started","url":"https://hooks.zapier.com/hooks/catch/XXXX/YYYY"}'
 ```
 
-### Templates
-
+**Templates:**
 - `integrations/templates/n8n-workflow.json` — import into n8n
-- `integrations/templates/zapier-setup.md` — Zapier “Catch Hook” setup + mapping notes
+- `integrations/templates/zapier-setup.md` — Zapier Catch Hook guide
 
-## Agent Configuration
+---
 
-Agents are defined in `config/agents.yaml`. Each agent specifies:
+## Evaluation
 
-- LLM provider and model
-- Channel (voice / chat / copilot)
-- Available tools
-- Temperature and token limits
-- Containment targets
-- Telephony settings (for voice agents)
+Run automated quality tests against the agent:
+
+```bash
+python scripts/run_evaluation.py
+```
+
+Or via API: `POST /api/v1/evaluation/run`
+
+Metrics tracked:
+- **Containment rate** — % of queries resolved without escalation
+- **Tool accuracy** — correct tool selection (lookup, search, transfer)
+- **Response time** — latency in milliseconds
+
+Test cases live in `tests/evaluation/test_cases.json`.
+
+---
 
 ## Project Structure
 
 ```
-├── config/agents.yaml          # Agent definitions and RAG settings
-├── data/knowledge_base/        # Sample KB documents
+voice-agents/
+├── config/
+│   └── agents.yaml              # Agent definitions, RAG & eval settings
+├── data/
+│   └── knowledge_base/          # Sample FAQ documents
+├── integrations/
+│   └── templates/               # n8n & Zapier workflow templates
 ├── scripts/
-│   ├── demo_chat.py            # Interactive chat demo
-│   ├── ingest_kb.py            # KB ingestion CLI
-│   └── run_evaluation.py       # Evaluation runner
+│   ├── demo_chat.py             # CLI chat demo
+│   ├── ingest_kb.py             # Knowledge base ingestion
+│   └── run_evaluation.py        # Evaluation runner
 ├── src/
-│   ├── agents/tools.py         # LangChain tool definitions
-│   ├── api/routes.py           # REST API endpoints
-│   ├── evaluation/evaluator.py # Containment & quality testing
+│   ├── agents/tools.py          # LangChain tool definitions
+│   ├── api/routes.py            # REST API endpoints
+│   ├── evaluation/evaluator.py  # Quality & containment testing
 │   ├── integrations/
-│   │   ├── crm.py              # HubSpot CRM adapter
-│   │   └── webhooks.py         # iPaaS webhook dispatcher
-│   ├── llm/factory.py          # Multi-provider LLM factory
-│   ├── prompts/templates.py    # Channel-specific prompts
-│   ├── rag/                    # Ingestion, vector store, retriever
-│   ├── telephony/              # Twilio handler, call router
+│   │   ├── crm.py               # HubSpot CRM adapter
+│   │   └── webhooks.py          # iPaaS event dispatcher
+│   ├── llm/factory.py           # Multi-provider LLM factory
+│   ├── prompts/templates.py   # Voice / chat / copilot prompts
+│   ├── rag/                     # Ingestion, vector store, retrieval
+│   ├── telephony/               # Twilio handler, call router, TwiML parser
 │   └── workflows/orchestrator.py # LangGraph agent orchestration
-└── tests/
-    ├── evaluation/test_cases.json
-    └── test_platform.py
+├── static/
+│   └── index.html               # Web UI
+├── tests/
+│   ├── evaluation/test_cases.json
+│   └── test_platform.py
+├── .env.example
+├── requirements.txt
+├── run.sh                       # One-command startup script
+└── README.md
 ```
 
-## API Endpoints
+---
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/v1/health` | Health check |
-| POST | `/api/v1/chat` | Chat with an agent |
-| POST | `/api/v1/copilot` | Agent-assist copilot |
-| DELETE | `/api/v1/chat/{session_id}` | End a chat session |
-| POST | `/api/v1/rag/ingest` | Ingest documents |
-| POST | `/api/v1/rag/search` | Search knowledge base |
-| POST | `/api/v1/telephony/voice/inbound` | Twilio inbound webhook |
-| POST | `/api/v1/telephony/voice/process` | Twilio speech processing |
-| POST | `/api/v1/integrations/webhooks` | Register webhook URLs |
-| POST | `/api/v1/evaluation/run` | Run evaluation suite |
-| GET | `/api/v1/agents` | List configured agents |
+## Environment Variables
+
+Copy `.env.example` to `.env`:
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `OPENAI_API_KEY` | Optional | Enables real GPT responses and OpenAI embeddings |
+| `ANTHROPIC_API_KEY` | Optional | For Anthropic-powered copilot |
+| `TWILIO_ACCOUNT_SID` | Optional | Real phone call integration |
+| `TWILIO_AUTH_TOKEN` | Optional | Twilio auth |
+| `TWILIO_PHONE_NUMBER` | Optional | Your Twilio number |
+| `TWILIO_WEBHOOK_BASE_URL` | Optional | ngrok or production URL |
+| `HUBSPOT_API_KEY` | Optional | Real HubSpot CRM (mock used if empty) |
+
+---
 
 ## Running Tests
 
@@ -194,10 +336,40 @@ Agents are defined in `config/agents.yaml`. Each agent specifies:
 pytest tests/ -v
 ```
 
-## Environment Variables
+Expected: **7 tests passing** (call routing, prompts, tools, CRM mock).
 
-See `.env.example` for all configuration options. At minimum you need:
+---
 
-- `OPENAI_API_KEY` — for LLM and embeddings
-- Optionally `ANTHROPIC_API_KEY` — for copilot agent
-- Optionally Twilio credentials — for voice telephony
+## Demo Script (2-minute interview walkthrough)
+
+1. **Start:** `./run.sh` → open [http://127.0.0.1:8001/](http://127.0.0.1:8001/)
+2. **Chat:** Ask *"How do I reset my password?"* → show RAG + tool usage
+3. **CRM:** Ask *"Can you look up jane@example.com?"* → show customer lookup
+4. **Voice:** Switch to Voice tab → Answer call → ask a question → request manager → show transfer
+5. **API:** Open `/docs` → show telephony simulate endpoint and evaluation runner
+6. **Architecture:** Mention LangGraph orchestration, ChromaDB RAG, Twilio PSTN, HubSpot CRM, n8n webhooks
+
+---
+
+## Skills Demonstrated
+
+This project maps directly to enterprise AI agent engineering requirements:
+
+- Prompt design and workflow configuration
+- LLM orchestration (LangChain / LangGraph)
+- Retrieval-augmented generation (RAG)
+- API and CRM integrations
+- Telephony (SIP, CCaaS, PSTN via Twilio)
+- iPaaS event routing (n8n, Zapier)
+- Agent evaluation and containment testing
+- Customer-facing demo readiness
+
+---
+
+## License
+
+MIT — free to use, modify, and showcase in portfolios.
+
+## Author
+
+**Shubham RSY** — [github.com/ShubhamRSY](https://github.com/ShubhamRSY)
