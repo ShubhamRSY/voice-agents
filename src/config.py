@@ -53,6 +53,18 @@ class Settings(BaseSettings):
     settings_admin_token: str = ""
     integrations_encryption_key: str = ""
 
+    jwt_secret: str = ""
+    rate_limit_rpm: int = 60
+
+    slack_webhook_url: str = ""
+    zendesk_api_key: str = ""
+    zendesk_subdomain: str = ""
+    servicenow_instance: str = ""
+    servicenow_api_key: str = ""
+    redis_url: str = ""
+    sentry_dsn: str = ""
+    otel_endpoint: str = ""
+
     app_host: str = "0.0.0.0"
     app_port: int = 8000
     log_level: str = "INFO"

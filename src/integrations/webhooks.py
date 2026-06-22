@@ -6,7 +6,6 @@ from typing import Any
 
 import httpx
 import structlog
-from fastapi import HTTPException
 
 logger = structlog.get_logger()
 
@@ -38,14 +37,18 @@ class WebhookDispatcher:
         if signature:
             request_headers["X-Webhook-Signature"] = signature
 
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            response = await client.post(url, content=body, headers=request_headers)
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                response = await client.post(url, content=body, headers=request_headers)
+        except Exception as exc:
+            logger.warning("webhook_dispatch_failed", url=url, event_type=event_type, error=str(exc))
+            return {"status": "failed", "event": event_type, "error": str(exc)}
 
         if response.status_code >= 400:
-            logger.error("webhook_failed", url=url, status=response.status_code)
-            raise HTTPException(status_code=502, detail=f"Webhook delivery failed: {response.status_code}")
+            logger.warning("webhook_rejected", url=url, status=response.status_code)
+            return {"status": "failed", "event": event_type, "status_code": response.status_code}
 
-        logger.info("webhook_dispatched", event=event_type, url=url)
+        logger.info("webhook_dispatched", event_type=event_type, url=url)
         return {"status": "delivered", "event": event_type}
 
 

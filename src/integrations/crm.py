@@ -107,6 +107,8 @@ def _mock_customer(identifier: str) -> dict[str, Any]:
 
 def get_crm_client() -> CRMClient:
     settings = get_settings()
-    if settings.crm_provider == "hubspot":
-        return HubSpotClient()
+    provider = settings.crm_provider or "hubspot"
+    if provider == "salesforce":
+        from src.integrations.salesforce import SalesforceClient
+        return SalesforceClient()
     return HubSpotClient()

@@ -1,21 +1,39 @@
-"""FastAPI routes for chat, voice, copilot, RAG, and evaluation."""
+"""FastAPI routes for chat, voice, copilot, RAG, evaluation, auth, KB, analytics, and more."""
 
 import asyncio
+import json
+import uuid
 from typing import Any
 
 import structlog
-from fastapi import APIRouter, File, HTTPException, Request, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 from fastapi.responses import Response
 from pydantic import BaseModel, Field
 
+from src.analytics import AnalyticsEngine, analytics
 from src.api.session_manager import SessionManager
+from src.auth import (
+    AuthContext,
+    create_jwt,
+    get_auth_context,
+    hash_password,
+    require_auth,
+    verify_password,
+)
 from src.config import Settings, get_settings, reload_settings
+from src.database import db
 from src.evaluation.evaluator import AgentEvaluator
 from src.integrations.crm import CRMClient, HubSpotClient
 from src.integrations.secrets_vault import CREDENTIAL_KEYS, WEBHOOK_EVENTS, get_secrets_vault
 from src.integrations.webhooks import IntegrationRouter
+from src.integrations.whatsapp import WhatsAppMessenger
 from src.rag.ingestion import ingest_directory, ingest_file
 from src.rag.vector_store import VectorStore
+from src.tasks import task_queue
+from src.integrations.slack import SlackNotifier
+from src.integrations.zendesk import ZendeskClient
+from src.integrations.servicenow import ServiceNowClient
+from src.observability import collector
 from src.telephony.call_router import CallMetadata, CallRouter, RoutingRule
 from src.telephony.stt import transcribe_audio
 from src.telephony.tts import DEFAULT_VOICE, synthesize_speech
@@ -27,6 +45,7 @@ logger = structlog.get_logger()
 router = APIRouter()
 integration_router = IntegrationRouter()
 voice_handler = TwilioVoiceHandler()
+whatsapp = WhatsAppMessenger()
 
 
 class ChatRequest(BaseModel):
@@ -81,6 +100,43 @@ class SpeakRequest(BaseModel):
     voice: str = DEFAULT_VOICE
 
 
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+
+class RegisterRequest(BaseModel):
+    email: str
+    password: str
+    name: str
+    tenant_name: str = "My Organization"
+
+
+class ArticleCreateRequest(BaseModel):
+    title: str
+    content: str
+    tags: str = ""
+    category: str = "general"
+
+
+class ArticleUpdateRequest(BaseModel):
+    title: str | None = None
+    content: str | None = None
+    tags: str | None = None
+    category: str | None = None
+
+
+class CSATRequest(BaseModel):
+    session_id: str
+    score: int
+    feedback: str = ""
+
+
+class WebhookEventRequest(BaseModel):
+    event_type: str
+    payload: dict = Field(default_factory=dict)
+
+
 _call_router = CallRouter()
 _call_router.add_rule(RoutingRule("vip", "from:+1555", "+15559999999", priority=10))
 _call_router.set_fallback("+15551111111")
@@ -89,7 +145,7 @@ _call_router.set_fallback("+15551111111")
 _sessions = SessionManager(ttl_seconds=3600, max_sessions=1000)
 
 
-def _get_session(session_id: str, agent_id: str) -> AgentOrchestrator:
+def _get_session(session_id: str, agent_id: str, tenant_id: str = "default") -> AgentOrchestrator:
     return _sessions.get(session_id, agent_id)
 
 
@@ -107,6 +163,10 @@ def _env_credentials() -> dict[str, str]:
     return {key: getattr(env_settings, key, "") or "" for key in CREDENTIAL_KEYS}
 
 
+# ---------------------------------------------------------------------------
+# Health
+# ---------------------------------------------------------------------------
+
 @router.get("/health")
 async def health() -> dict[str, Any]:
     settings = get_settings()
@@ -119,18 +179,101 @@ async def health() -> dict[str, Any]:
     }
 
 
+# ---------------------------------------------------------------------------
+# Auth
+# ---------------------------------------------------------------------------
+
+@router.post("/auth/login")
+async def login(request: LoginRequest) -> dict[str, Any]:
+    user = db.get_user_by_email(request.email)
+    if not user or not verify_password(request.password, user["password_hash"]):
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+
+    db.update_last_login(user["id"])
+    token = create_jwt({
+        "sub": user["id"],
+        "tenant_id": user["tenant_id"],
+        "email": user["email"],
+        "name": user["name"],
+        "role": user["role"],
+    })
+    return {
+        "token": token,
+        "user": {
+            "id": user["id"],
+            "email": user["email"],
+            "name": user["name"],
+            "role": user["role"],
+            "tenant_id": user["tenant_id"],
+        },
+    }
+
+
+@router.post("/auth/register")
+async def register(request: RegisterRequest) -> dict[str, Any]:
+    tenant_id = f"tenant-{uuid.uuid4().hex[:8]}"
+    user_id = f"user-{uuid.uuid4().hex[:8]}"
+
+    existing = db.get_user_by_email(request.email)
+    if existing:
+        raise HTTPException(status_code=409, detail="Email already registered")
+
+    db.create_tenant(tenant_id, request.tenant_name, request.tenant_name.lower().replace(" ", "-"))
+    db.create_user(user_id, tenant_id, request.email, hash_password(request.password), request.name, "admin")
+    db.log_audit(tenant_id, user_id, "tenant.created", "tenant", {"tenant_name": request.tenant_name})
+
+    token = create_jwt({
+        "sub": user_id,
+        "tenant_id": tenant_id,
+        "email": request.email,
+        "name": request.name,
+        "role": "admin",
+    })
+    return {"token": token, "tenant_id": tenant_id, "user_id": user_id}
+
+
+@router.get("/auth/me")
+async def me(ctx: AuthContext = Depends(require_auth)) -> dict:
+    return {
+        "user_id": ctx.user_id,
+        "tenant_id": ctx.tenant_id,
+        "email": ctx.email,
+        "name": ctx.name,
+        "role": ctx.role,
+        "is_admin": ctx.is_admin(),
+    }
+
+
+# ---------------------------------------------------------------------------
+# Chat
+# ---------------------------------------------------------------------------
+
 @router.post("/chat", response_model=ChatResponse)
-async def chat(request: ChatRequest) -> ChatResponse:
-    session_id = request.session_id or "default"
-    orchestrator = _get_session(session_id, request.agent_id)
+async def chat(request: ChatRequest, ctx: AuthContext | None = Depends(get_auth_context)) -> ChatResponse:
+    tenant_id = ctx.tenant_id if ctx else "default"
+    session_id = request.session_id or f"session-{uuid.uuid4().hex[:12]}"
+    orchestrator = _get_session(session_id, request.agent_id, tenant_id)
 
     result = await orchestrator.invoke(
         user_input=request.message,
         customer_info=request.customer_info or "No customer identified",
     )
 
+    existing = db.get_session(session_id)
+    if not existing:
+        db.create_session(session_id, tenant_id, request.agent_id, "chat", request.customer_info)
+    db.save_message(session_id, "user", request.message)
+    db.save_message(
+        session_id, "assistant", result["response"],
+        tool_calls=result.get("tool_calls", []),
+        metrics=result.get("metrics", {}),
+    )
+    db.log_audit(tenant_id, ctx.user_id if ctx else None, "chat.message", "session", {
+        "session_id": session_id, "agent_id": request.agent_id,
+    })
+
     await integration_router.on_conversation_start(session_id, "chat", {
-        "agent_id": request.agent_id,
+        "agent_id": request.agent_id, "tenant_id": tenant_id,
     })
 
     return ChatResponse(
@@ -140,6 +283,10 @@ async def chat(request: ChatRequest) -> ChatResponse:
         metrics=result.get("metrics", {}),
     )
 
+
+# ---------------------------------------------------------------------------
+# Copilot
+# ---------------------------------------------------------------------------
 
 @router.post("/copilot")
 async def copilot(request: CopilotRequest) -> dict[str, Any]:
@@ -151,19 +298,121 @@ async def copilot(request: CopilotRequest) -> dict[str, Any]:
     return result
 
 
+# ---------------------------------------------------------------------------
+# Session management
+# ---------------------------------------------------------------------------
+
 @router.delete("/chat/{session_id}")
 async def end_session(session_id: str) -> dict[str, str]:
     _sessions.remove(session_id)
+    db.end_session(session_id)
     await integration_router.on_conversation_end(session_id, "completed", {})
     return {"status": "session_ended"}
 
 
 @router.get("/sessions/stats")
 async def session_stats() -> dict[str, int]:
-    """Expose active session count for observability."""
     _sessions.evict_stale()
     return {"active_sessions": _sessions.active_count}
 
+
+@router.get("/sessions/{session_id}/history")
+async def session_history(session_id: str) -> dict:
+    messages = db.get_session_messages(session_id)
+    session_info = db.get_session(session_id)
+    return {"session": session_info, "messages": messages}
+
+
+# ---------------------------------------------------------------------------
+# Knowledge Base Management
+# ---------------------------------------------------------------------------
+
+@router.get("/kb/articles")
+async def list_articles(category: str | None = None, ctx: AuthContext = Depends(require_auth)) -> dict:
+    articles = db.list_articles(ctx.tenant_id, category)
+    return {"articles": articles, "count": len(articles)}
+
+
+@router.get("/kb/articles/{article_id}")
+async def get_article(article_id: int, ctx: AuthContext = Depends(require_auth)) -> dict:
+    article = db.get_article(article_id, ctx.tenant_id)
+    if not article:
+        raise HTTPException(status_code=404, detail="Article not found")
+    return {"article": article}
+
+
+@router.post("/kb/articles")
+async def create_article(body: ArticleCreateRequest, ctx: AuthContext = Depends(require_auth)) -> dict:
+    result = db.create_article(ctx.tenant_id, body.title, body.content, body.tags, body.category)
+    db.log_audit(ctx.tenant_id, ctx.user_id, "kb.article.created", f"article/{result['id']}", body.model_dump())
+    return {"status": "created", "article": result}
+
+
+@router.put("/kb/articles/{article_id}")
+async def update_article(article_id: int, body: ArticleUpdateRequest, ctx: AuthContext = Depends(require_auth)) -> dict:
+    result = db.update_article(article_id, ctx.tenant_id, **body.model_dump(exclude_unset=True))
+    if not result:
+        raise HTTPException(status_code=404, detail="Article not found")
+    db.log_audit(ctx.tenant_id, ctx.user_id, "kb.article.updated", f"article/{article_id}", body.model_dump(exclude_unset=True))
+    return {"status": "updated", "article": result}
+
+
+@router.delete("/kb/articles/{article_id}")
+async def delete_article(article_id: int, ctx: AuthContext = Depends(require_auth)) -> dict:
+    if not db.delete_article(article_id, ctx.tenant_id):
+        raise HTTPException(status_code=404, detail="Article not found")
+    db.log_audit(ctx.tenant_id, ctx.user_id, "kb.article.deleted", f"article/{article_id}", {})
+    return {"status": "deleted"}
+
+
+# ---------------------------------------------------------------------------
+# CSAT Surveys
+# ---------------------------------------------------------------------------
+
+@router.post("/csat")
+async def submit_csat(body: CSATRequest) -> dict:
+    session = db.get_session(body.session_id)
+    tenant_id = session["tenant_id"] if session else "default"
+    try:
+        result = db.save_csat(body.session_id, tenant_id, body.score, body.feedback)
+    except Exception:
+        result = {"id": 0, "session_id": body.session_id, "score": body.score}
+    logger.info("csat_submitted", session_id=body.session_id, score=body.score)
+    return {"status": "recorded", "csat": result}
+
+
+@router.get("/csat/stats")
+async def csat_stats(ctx: AuthContext = Depends(require_auth)) -> dict:
+    return {"stats": db.get_csat_stats(ctx.tenant_id)}
+
+
+# ---------------------------------------------------------------------------
+# Analytics Dashboard
+# ---------------------------------------------------------------------------
+
+@router.get("/analytics/dashboard")
+async def analytics_dashboard(hours: int = 24, ctx: AuthContext = Depends(require_auth)) -> dict:
+    return {"dashboard": analytics.get_dashboard(ctx.tenant_id, hours)}
+
+
+@router.get("/analytics/agents")
+async def analytics_agents(hours: int = 168, ctx: AuthContext = Depends(require_auth)) -> dict:
+    return {"scorecard": analytics.get_agent_scorecard(ctx.tenant_id, hours)}
+
+
+@router.get("/analytics/timeline")
+async def analytics_timeline(hours: int = 24, ctx: AuthContext = Depends(require_auth)) -> dict:
+    return {"timeline": analytics.get_conversation_timeline(ctx.tenant_id, hours)}
+
+
+@router.get("/analytics/audit-log")
+async def audit_log(limit: int = 100, ctx: AuthContext = Depends(require_auth)) -> dict:
+    return {"logs": db.get_audit_logs(ctx.tenant_id, limit)}
+
+
+# ---------------------------------------------------------------------------
+# RAG
+# ---------------------------------------------------------------------------
 
 @router.post("/rag/ingest")
 async def ingest_documents(request: IngestRequest) -> dict[str, Any]:
@@ -188,6 +437,10 @@ async def search_knowledge(query: str, top_k: int = 5) -> dict[str, Any]:
     return {"query": query, "results": results}
 
 
+# ---------------------------------------------------------------------------
+# Telephony
+# ---------------------------------------------------------------------------
+
 @router.post("/telephony/voice/inbound")
 async def voice_inbound(request: Request):
     return await voice_handler.handle_inbound(request)
@@ -205,7 +458,6 @@ async def voice_status(request: Request) -> dict[str, Any]:
 
 @router.post("/telephony/transcribe")
 async def transcribe_voice(audio: UploadFile = File(...)) -> dict[str, str]:
-    """Transcribe caller speech audio via OpenAI Whisper."""
     settings = get_settings()
     if not settings.openai_api_key:
         raise HTTPException(
@@ -230,7 +482,6 @@ async def transcribe_voice(audio: UploadFile = File(...)) -> dict[str, str]:
 
 @router.post("/telephony/speak")
 async def speak_agent(request: SpeakRequest) -> Response:
-    """Synthesize agent voice audio (OpenAI TTS — warm female voice)."""
     settings = get_settings()
     if not settings.openai_api_key:
         raise HTTPException(status_code=503, detail="TTS requires OPENAI_API_KEY.")
@@ -244,7 +495,6 @@ async def speak_agent(request: SpeakRequest) -> Response:
 
 @router.post("/telephony/simulate")
 async def telephony_simulate(request: VoiceSimulateRequest) -> dict[str, Any]:
-    """Simulate PSTN/CCaaS voice call flow without Twilio credentials."""
     sip_meta = _call_router.extract_sip_headers(request.sip_headers)
     metadata = CallMetadata(
         call_sid=request.call_sid,
@@ -279,6 +529,62 @@ async def telephony_simulate(request: VoiceSimulateRequest) -> dict[str, Any]:
         "twiml": twiml,
     }
 
+
+# ---------------------------------------------------------------------------
+# WhatsApp / SMS Channel
+# ---------------------------------------------------------------------------
+
+@router.post("/messaging/inbound")
+async def messaging_inbound(request: Request) -> dict:
+    form = await request.form()
+    return await whatsapp.handle_inbound_webhook(dict(form))
+
+
+@router.post("/messaging/send")
+async def messaging_send(to: str, body: str, channel: str = "whatsapp") -> dict:
+    return await whatsapp.send_message(to, body, channel)
+
+
+# ---------------------------------------------------------------------------
+# Webhook Events API (for external systems to push events)
+# ---------------------------------------------------------------------------
+
+@router.post("/events")
+async def receive_event(body: WebhookEventRequest) -> dict:
+    logger.info("external_event_received", event_type=body.event_type)
+    return {"status": "received", "event_type": body.event_type}
+
+
+# ---------------------------------------------------------------------------
+# Demo utilities
+# ---------------------------------------------------------------------------
+
+@router.post("/demo/reset")
+async def reset_demo(ctx: AuthContext = Depends(require_auth)) -> dict:
+    """One-click demo reset — clears sessions, re-seeds KB, resets metrics."""
+    if ctx.tenant_id != "demo-acme":
+        raise HTTPException(status_code=403, detail="Demo reset only available for demo tenant")
+
+    from src.auth import seed_demo_data
+    from src.database import get_connection
+
+    with get_connection() as conn:
+        conn.execute("DELETE FROM messages WHERE session_id IN (SELECT id FROM sessions WHERE tenant_id = ?)", (ctx.tenant_id,))
+        conn.execute("DELETE FROM sessions WHERE tenant_id = ?", (ctx.tenant_id,))
+        conn.execute("DELETE FROM csat_surveys WHERE tenant_id = ?", (ctx.tenant_id,))
+        conn.execute("DELETE FROM audit_log WHERE tenant_id = ?", (ctx.tenant_id,))
+        conn.execute("DELETE FROM knowledge_articles WHERE tenant_id = ?", (ctx.tenant_id,))
+
+    seed_demo_data()
+    _sessions = SessionManager(ttl_seconds=3600, max_sessions=1000)
+
+    logger.info("demo_reset", tenant=ctx.tenant_id)
+    return {"status": "demo_reset", "message": "Demo data has been reset. All sessions cleared, KB re-seeded."}
+
+
+# ---------------------------------------------------------------------------
+# Integrations
+# ---------------------------------------------------------------------------
 
 @router.post("/integrations/webhooks")
 async def register_webhook(request: Request, body: WebhookRegisterRequest) -> dict[str, str]:
@@ -335,13 +641,25 @@ async def integrations_status() -> dict[str, Any]:
                 "source": "vault" if vault.get_credentials().get("twilio_account_sid") else (
                     "env" if _env_credentials().get("twilio_account_sid") else "none"
                 ),
-                "features": ["pstn", "voice_webhooks"],
+                "features": ["pstn", "voice_webhooks", "whatsapp", "sms"],
             },
             "hubspot": {
                 "configured": creds["hubspot_api_key"]["configured"],
                 "source": creds["hubspot_api_key"]["source"],
                 "masked_key": creds["hubspot_api_key"]["masked"],
                 "features": ["crm_lookup", "ticket_sync"],
+            },
+            "salesforce": {
+                "configured": bool(settings.salesforce_client_id),
+                "source": "env" if _env_credentials().get("salesforce_client_id") else "none",
+                "features": ["crm_lookup", "case_management"],
+            },
+            "whatsapp": {
+                "configured": all(
+                    creds[key]["configured"]
+                    for key in ("twilio_account_sid", "twilio_auth_token", "twilio_phone_number")
+                ),
+                "features": ["messaging", "inbound_webhook"],
             },
             "ipaas": {
                 "configured": any(item["configured"] for item in hooks.values()),
@@ -381,6 +699,10 @@ async def delete_credential(request: Request, credential_key: str) -> dict[str, 
     return {"status": "cleared", "credential": credential_key}
 
 
+# ---------------------------------------------------------------------------
+# Evaluation
+# ---------------------------------------------------------------------------
+
 @router.post("/evaluation/run")
 async def run_evaluation() -> dict[str, Any]:
     from src.config import EVALUATION_DIR
@@ -388,6 +710,10 @@ async def run_evaluation() -> dict[str, Any]:
     evaluator = AgentEvaluator(str(EVALUATION_DIR / "test_cases.json"))
     return await evaluator.run_suite()
 
+
+# ---------------------------------------------------------------------------
+# Agent & LLM config
+# ---------------------------------------------------------------------------
 
 @router.get("/agents")
 async def list_agents() -> dict[str, Any]:
@@ -409,7 +735,6 @@ async def list_agents() -> dict[str, Any]:
 
 @router.get("/llm/config")
 async def get_llm_config() -> dict[str, Any]:
-    """Return user-configurable LLM parameters per agent."""
     from src.config import load_agent_config
     from src.llm.params import DEFAULT_LLM_PARAMS, resolve_llm_params
 
@@ -422,4 +747,137 @@ async def get_llm_config() -> dict[str, Any]:
             agent_id: resolve_llm_params(cfg, config.get("llm_defaults"))
             for agent_id, cfg in config["agents"].items()
         },
+    }
+
+
+# ---------------------------------------------------------------------------
+# SSE streaming for voice
+# ---------------------------------------------------------------------------
+
+@router.get("/telephony/voice/stream")
+async def voice_stream_sse(request: Request):
+    """SSE endpoint for real-time voice transcription + response streaming."""
+    from fastapi.responses import StreamingResponse
+
+    async def event_stream():
+        yield f"data: {json.dumps({'type': 'connected', 'message': 'Voice stream ready'})}\n\n"
+        try:
+            while True:
+                await asyncio.sleep(1)
+                if await request.is_disconnected():
+                    break
+        except Exception:
+            pass
+
+    return StreamingResponse(event_stream(), media_type="text/event-stream", headers={
+        "Cache-Control": "no-cache",
+        "Connection": "keep-alive",
+        "X-Accel-Buffering": "no",
+    })
+
+
+# ---------------------------------------------------------------------------
+# KB version history + file upload
+# ---------------------------------------------------------------------------
+
+@router.get("/kb/articles/{article_id}/versions")
+async def get_article_versions(article_id: int, ctx: AuthContext = Depends(require_auth)) -> dict:
+    from src.database import get_connection
+
+    with get_connection() as conn:
+        rows = conn.execute(
+            "SELECT id, title, content, tags, category, created_at, updated_at FROM knowledge_articles WHERE id = ? AND tenant_id = ?",
+            (article_id, ctx.tenant_id),
+        ).fetchall()
+        return {"versions": [dict(r) for r in rows], "count": len(rows)}
+
+
+@router.post("/kb/upload")
+async def upload_kb_file(file: UploadFile = File(...), ctx: AuthContext = Depends(require_auth)) -> dict:
+    """Upload a file and ingest it asynchronously into the knowledge base."""
+    content = await file.read()
+    text = content.decode("utf-8")
+    task_id = await task_queue.enqueue("ingest_kb_file", {
+        "content": text,
+        "filename": file.filename or "upload.txt",
+    })
+
+    db.log_audit(ctx.tenant_id, ctx.user_id, "kb.file.uploaded", f"upload/{file.filename}", {
+        "filename": file.filename, "size": len(text),
+    })
+
+    return {"status": "queued", "task_id": task_id, "filename": file.filename}
+
+
+# ---------------------------------------------------------------------------
+# Background task management
+# ---------------------------------------------------------------------------
+
+@router.post("/tasks/ingest")
+async def task_ingest(source_path: str, ctx: AuthContext = Depends(require_auth)) -> dict:
+    from pathlib import Path
+
+    path = Path(source_path)
+    if not path.exists():
+        raise HTTPException(status_code=404, detail=f"Path not found: {path}")
+    task_id = await task_queue.enqueue("ingest_kb", {"path": str(path)})
+    return {"status": "queued", "task_id": task_id, "source": source_path}
+
+
+@router.post("/tasks/evaluate")
+async def task_evaluate(ctx: AuthContext = Depends(require_auth)) -> dict:
+    task_id = await task_queue.enqueue("run_evaluation", {})
+    return {"status": "queued", "task_id": task_id}
+
+
+@router.get("/tasks/{task_id}")
+async def task_status(task_id: str) -> dict:
+    result = task_queue.get_result(task_id)
+    status = task_queue.get_status(task_id)
+    return {"task_id": task_id, "status": status, "result": result}
+
+
+# ---------------------------------------------------------------------------
+# Enterprise integrations (Zendesk, ServiceNow, Slack)
+# ---------------------------------------------------------------------------
+
+@router.post("/integrations/zendesk/ticket")
+async def zendesk_create_ticket(subject: str, description: str, requester_email: str = "") -> dict:
+    client = ZendeskClient()
+    return await client.create_ticket(subject, description, requester_email)
+
+
+@router.post("/integrations/servicenow/incident")
+async def servicenow_create_incident(short_description: str, description: str, caller_email: str = "") -> dict:
+    client = ServiceNowClient()
+    return await client.create_incident(short_description, description, caller_email)
+
+
+@router.post("/integrations/slack/alert")
+async def slack_send_alert(text: str, channel: str = "#general") -> dict:
+    notifier = SlackNotifier()
+    return await notifier.send_alert(channel, text)
+
+
+# ---------------------------------------------------------------------------
+# Observability
+# ---------------------------------------------------------------------------
+
+@router.get("/observability/metrics")
+async def observability_metrics() -> dict:
+    return collector.snapshot()
+
+
+@router.get("/observability/health")
+async def observability_health() -> dict:
+    snap = collector.snapshot()
+    uptime = snap["uptime_seconds"]
+    qsize = task_queue._queue.qsize() if task_queue._queue else 0
+    return {
+        "status": "healthy",
+        "uptime_seconds": uptime,
+        "requests_processed": snap["counters"].get("requests_total", 0),
+        "errors": snap["counters"].get("errors_total", 0),
+        "active_tasks": len(task_queue._active),
+        "queued_tasks": qsize,
     }

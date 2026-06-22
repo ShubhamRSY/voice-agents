@@ -17,3 +17,6 @@ htmlcov/
 tests/reports/junit*.xml
 tests/reports/coverage*.xml
 tests/reports/summary_*.txt
+data/.jwt_secret
+data/nexus.db*
+data/integrations.vault
