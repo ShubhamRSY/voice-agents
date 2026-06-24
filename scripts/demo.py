@@ -274,11 +274,11 @@ def ol_js(title, body):
     """
 
 def tt_js(label, body, x, y):
-    l, b = json.dumps(label), json.dumps(body)
+    label_str, body_str = json.dumps(label), json.dumps(body)
     return f"""
     (()=>{{let t=document.getElementById('nc-tooltip');
     if(!t){{t=document.createElement('div');t.id='nc-tooltip';t.innerHTML='<div class=nc-tip><div class=nc-tip-label></div><div class=nc-tip-body></div></div>';document.body.appendChild(t);}}
-    t.querySelector('.nc-tip-label').textContent={l};t.querySelector('.nc-tip-body').textContent={b};
+    t.querySelector('.nc-tip-label').textContent={label_str};t.querySelector('.nc-tip-body').textContent={body_str};
     t.style.left='{x}px';t.style.top='{y}px';t.classList.add('show');}})();
     """
 
@@ -417,8 +417,6 @@ async def main():
 
             # Process hovers: move cursor, show tooltip, highlight, wait
             hovers = sc.get("hovers", [])
-            total_hold = sum(h.get("hold", 1.0) for h in hovers) + 0.5 * len(hovers)
-            per_hover_narr = narr_dur / max(len(hovers), 1)
 
             for hi, hv in enumerate(hovers):
                 sel = hv["selector"]
