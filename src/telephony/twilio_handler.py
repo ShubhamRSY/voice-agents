@@ -1,7 +1,6 @@
 """Twilio telephony integration for voice agents."""
 
 import time
-from dataclasses import dataclass, field
 from typing import Any
 
 import structlog
@@ -9,25 +8,13 @@ from fastapi import Request, Response
 from twilio.twiml.voice_response import Gather, VoiceResponse
 
 from src.config import get_settings, load_agent_config
+from src.telephony.ccaas_base import CallFormData, CcaasSessionEntry, CcaasVoiceHandler
 from src.workflows.orchestrator import AgentOrchestrator
 
 logger = structlog.get_logger()
 
 
-@dataclass
-class CallFormData:
-    call_sid: str
-    from_number: str
-    speech_result: str | None = None
-
-
-@dataclass
-class VoiceSessionEntry:
-    orchestrator: AgentOrchestrator
-    last_access: float = field(default_factory=time.time)
-
-
-class TwilioVoiceHandler:
+class TwilioVoiceHandler(CcaasVoiceHandler):
     """Handles inbound/outbound Twilio voice calls with SIP/PSTN routing."""
 
     def __init__(self, agent_id: str = "voice_support", session_ttl_seconds: int = 7200):
@@ -36,7 +23,7 @@ class TwilioVoiceHandler:
         self.telephony_config = self.config.get("telephony", {})
         self.settings = get_settings()
         self.session_ttl_seconds = session_ttl_seconds
-        self.sessions: dict[str, VoiceSessionEntry] = {}
+        self.sessions: dict[str, CcaasSessionEntry] = {}
 
     async def _parse_form(self, request: Request) -> CallFormData:
         form = await request.form()
@@ -51,7 +38,7 @@ class TwilioVoiceHandler:
         self._evict_stale_sessions()
         entry = self.sessions.get(call_sid)
         if entry is None:
-            entry = VoiceSessionEntry(orchestrator=AgentOrchestrator(self.agent_id))
+            entry = CcaasSessionEntry(orchestrator=AgentOrchestrator(self.agent_id))
             self.sessions[call_sid] = entry
         entry.last_access = time.time()
         return entry.orchestrator

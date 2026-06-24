@@ -2,17 +2,16 @@
 
 import hashlib
 import hmac
-import os
 import secrets
 import time
 from dataclasses import dataclass
-from typing import Any
 
 import structlog
-from fastapi import Depends, HTTPException, Request
+from fastapi import Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
-from src.config import DATA_DIR, get_settings
+from src.config import DATA_DIR
+from src.database import db
 
 logger = structlog.get_logger()
 

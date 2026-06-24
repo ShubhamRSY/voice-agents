@@ -1,8 +1,6 @@
 """Analytics and metrics aggregation for the dashboard."""
 
 import time
-from typing import Any
-
 from src.database import db
 
 

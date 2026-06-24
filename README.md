@@ -7,7 +7,7 @@
 [![CI](https://github.com/ShubhamRSY/voice-agents/actions/workflows/ci.yml/badge.svg)](https://github.com/ShubhamRSY/voice-agents/actions/workflows/ci.yml)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-75%2B%20passing-brightgreen.svg)](tests/)
+[![Tests](https://img.shields.io/badge/tests-130%2B%20passing-brightgreen.svg)](tests/)
 
 [Quick Start](#quick-start) · [Architecture](#architecture) · [API](#api-reference) · [Project Layout](#project-layout)
 
@@ -19,7 +19,7 @@
 
 ## About this project
 
-**Nexus** is an enterprise AI agent platform built for **contact centers, CCaaS deployments, and customer-support automation**. It lets you deploy and operate AI agents across **chat**, **voice (PSTN/Twilio)**, and **agent-assist copilot** channels — all backed by the same orchestration core, knowledge base, and integration layer.
+**Nexus** is an enterprise AI agent platform built for **contact centers, CCaaS deployments, and customer-support automation**. It lets you deploy and operate AI agents across **chat**, **voice (PSTN/Twilio, Amazon Connect, generic SIP/CCaaS)**, and **agent-assist copilot** channels — all backed by the same orchestration core, knowledge base, and integration layer.
 
 ### What problem it solves
 
@@ -51,7 +51,7 @@ Nexus packages all of this into a single FastAPI application with a built-in **N
 | **Voice** | `voice_support` | PSTN call flows via Twilio webhooks; in-browser simulator for dev |
 | **Copilot** | `copilot` | Drafts responses for human agents from conversation context |
 
-> **No API key required for local dev.** Without `OPENAI_API_KEY`, the platform uses a mock LLM and keyword RAG fallback — chat, voice simulator, and all **75+ tests** still work.
+> **No API key required for local dev.** Without `OPENAI_API_KEY`, the platform uses a mock LLM and keyword RAG fallback — chat, voice simulator, and all **130+ tests** still work.
 
 ### Optional integrations (no keys required to start)
 
@@ -60,6 +60,8 @@ Nexus packages all of this into a single FastAPI application with a built-in **N
 | **OpenAI** | LLM, embeddings, STT, TTS | `config/environment/.env` or Nexus **Integrations** panel |
 | **Anthropic** | LLM (copilot / chat) | `config/environment/.env` or UI |
 | **Twilio** | Real PSTN voice calls | `config/environment/.env` or UI |
+| **Amazon Connect** | AWS cloud contact center voice | `config/environment/.env` or UI |
+| **Generic SIP/CCaaS** | Any RFC 3261 SIP provider via the base adapter | Extend `src/telephony/ccaas_base.py` |
 | **HubSpot** | CRM lookup & tickets | `config/environment/.env` or UI |
 | **n8n / Zapier** | Workflow webhooks on lifecycle events | UI or API |
 
@@ -78,6 +80,7 @@ Credentials saved in the UI are **encrypted at rest** (Fernet) in `data/integrat
 | **CRM** | HubSpot adapter with mock fallback when credentials are absent |
 | **iPaaS** | Outbound webhooks for conversation/ticket/escalation events |
 | **Evaluation** | Automated suites for containment, tool accuracy, latency, benchmarks |
+| **Feedback loop** | CSAT-driven continuous improvement with auto-adjustments for temperature, tokens, and escalation thresholds |
 | **Console** | Nexus web UI — streaming chat, voice HUD, sessions, citation chips, integrations manager |
 | **Secrets vault** | Fernet-encrypted credential storage with masked API responses |
 | **CI/CD** | GitHub Actions: unit, E2E, Docker smoke — fully offline |
@@ -104,7 +107,7 @@ How Nexus sits in your enterprise stack:
 flowchart TB
     subgraph Channels["Customer & Agent Channels"]
         WEB["Web Console<br/><i>Chat · Copilot · Voice Simulator</i>"]
-        PSTN["PSTN / CCaaS<br/><i>Twilio · SIP</i>"]
+        PSTN["PSTN / CCaaS<br/><i>Twilio · Amazon Connect · SIP</i>"]
         API_CLIENT["REST API Clients<br/><i>CCaaS · CRM · Custom Apps</i>"]
     end
 
@@ -216,35 +219,35 @@ sequenceDiagram
     API-->>C: JSON (response, grounding_score, latency)
 ```
 
-### Voice request flow (PSTN)
+### Voice request flow (PSTN / CCaaS)
 
 ```mermaid
 sequenceDiagram
     participant P as PSTN Caller
-    participant TW as Twilio
+    participant CX as CCaaS Provider<br/><i>Twilio · Amazon Connect · SIP</i>
     participant API as API Gateway
-    participant TEL as Telephony Handler
+    participant TEL as Telephony Handler<br/><i>per-provider adapter</i>
     participant CR as Call Router
     participant O as Orchestrator
 
-    P->>TW: Inbound call
-    TW->>API: POST /telephony/voice/inbound
-    API->>TEL: handle_inbound (CallSid, From)
+    P->>CX: Inbound call
+    CX->>API: POST /telephony/voice/inbound
+    API->>TEL: handle_inbound (call metadata)
     TEL->>CR: route(call metadata, SIP headers)
     CR-->>TEL: agent_id, transfer rules
-    TEL-->>TW: TwiML Gather (greeting)
-    TW-->>P: Play greeting · listen
-    P->>TW: Speech utterance
-    TW->>API: POST /telephony/voice/process
+    TEL-->>CX: Provider-native response<br/><i>TwiML Gather · Lambda JSON · SIP 200</i>
+    CX-->>P: Play greeting · listen
+    P->>CX: Speech utterance
+    CX->>API: POST /telephony/voice/process
     API->>TEL: speech result
     TEL->>O: invoke(utterance, caller ID)
     O-->>TEL: response + tool_calls
     alt transfer_to_human
-        TEL-->>TW: TwiML Dial (escalation)
-        TW-->>P: Connect to agent queue
+        TEL-->>CX: Provider-native transfer
+        CX-->>P: Connect to agent queue
     else resolved
-        TEL-->>TW: TwiML Say + Gather
-        TW-->>P: Agent response
+        TEL-->>CX: Provider-native response
+        CX-->>P: Agent response
     end
 ```
 
@@ -288,8 +291,10 @@ flowchart LR
 | Runtime | Grounding Scorer | Hallucination risk, KB overlap | `src/llm/hallucination.py` |
 | Runtime | Evaluator | Containment, benchmarks, regression | `src/evaluation/evaluator.py` |
 | Tools | Agent Tools | CRM, KB search, tickets, transfer | `src/agents/tools.py` |
-| Integration | Telephony | TwiML, speech gather, call sessions | `src/telephony/twilio_handler.py` |
-| Integration | Call Router | Skill routing, VIP, SIP headers | `src/telephony/call_router.py` |
+| Integration | Telephony | CCaaS adapters — TwiML, Amazon Connect, SIP | `src/telephony/ccaas_base.py` |
+| Integration | Twilio Handler | TwiML, speech gather, call sessions | `src/telephony/twilio_handler.py` |
+| Integration | Amazon Connect Handler | Lambda-style contact flow webhooks | `src/telephony/amazon_connect_handler.py` |
+| Integration | SIP Router | Skill routing, VIP, SIP headers | `src/telephony/call_router.py` |
 | Integration | CRM Adapter | HubSpot contact lookup | `src/integrations/crm.py` |
 | Integration | Webhooks | iPaaS lifecycle events | `src/integrations/webhooks.py` |
 | Integration | Secrets Vault | Encrypted API keys & webhook URLs | `src/integrations/secrets_vault.py` |
@@ -309,7 +314,7 @@ flowchart LR
 | Orchestration | LangChain, LangGraph |
 | LLMs | OpenAI GPT-4o-mini, Anthropic, Gemini |
 | Vector DB | ChromaDB |
-| Telephony | Twilio (TwiML, webhooks) |
+| Telephony | Twilio, Amazon Connect, generic SIP/CCaaS |
 | CRM | HubSpot REST API |
 | Testing | pytest (unit + E2E + NFR) |
 | Frontend | Nexus console (HTML/CSS/JS) |
@@ -430,18 +435,26 @@ Three agents are defined in `config/agents.yaml`:
 | `POST` | `/api/v1/rag/ingest` | Ingest documents into vector store |
 | `POST` | `/api/v1/rag/search` | Search knowledge base |
 | `POST` | `/api/v1/telephony/simulate` | Voice call simulator (no Twilio) |
-| `POST` | `/api/v1/telephony/voice/inbound` | Twilio inbound webhook |
-| `POST` | `/api/v1/telephony/voice/process` | Twilio speech webhook |
+| `POST` | `/api/v1/telephony/voice/inbound` | Twilio / Amazon Connect inbound webhook |
+| `POST` | `/api/v1/telephony/voice/process` | Twilio / Amazon Connect speech webhook |
 | `POST` | `/api/v1/integrations/webhooks` | Register iPaaS webhook URL |
 | `DELETE` | `/api/v1/integrations/webhooks/{event_type}` | Remove webhook URL |
 | `GET` | `/api/v1/integrations/status` | Integration status (masked keys) |
 | `PUT` | `/api/v1/integrations/credentials` | Save encrypted API keys |
 | `DELETE` | `/api/v1/integrations/credentials/{key}` | Remove a stored credential |
 | `POST` | `/api/v1/evaluation/run` | Run automated evaluation suite |
+| `GET` | `/api/v1/feedback/{agent_id}/report` | Feedback loop report for an agent |
+| `GET` | `/api/v1/feedback/{agent_id}/analyze` | Run analysis and return improvement suggestions |
+| `POST` | `/api/v1/feedback/{agent_id}/snapshot` | Record a performance snapshot |
+| `GET` | `/api/v1/feedback/{agent_id}/config` | Get feedback loop configuration |
+| `PUT` | `/api/v1/feedback/{agent_id}/config` | Update feedback loop configuration |
+| `POST` | `/api/v1/feedback/{agent_id}/auto-adjust` | Auto-tune agent parameters |
 
 ---
 
-## Telephony (Twilio)
+## Telephony (Twilio · Amazon Connect · SIP)
+
+### Twilio
 
 ```bash
 # config/environment/.env
@@ -455,7 +468,33 @@ ngrok http 8001
 
 Set Twilio voice webhook to `POST {BASE_URL}/api/v1/telephony/voice/inbound`.
 
-Call routing supports skill-based rules, VIP detection, SIP `X-*` headers, and fallback destinations (`src/telephony/call_router.py`).
+### Amazon Connect
+
+The `AmazonConnectVoiceHandler` (`src/telephony/amazon_connect_handler.py`) accepts the standard
+Amazon Connect Lambda event payload format.  Wire it in a contact flow using an **Invoke AWS Lambda**
+or **External HTTP** block pointed at:
+
+```
+POST {BASE_URL}/api/v1/telephony/voice/inbound
+```
+
+The handler expects `Details.ContactData.ContactId` and `Details.ContactData.CustomerEndpoint.Address`.
+Speech input is passed via the `SpeechResult` attribute (set by a **Get customer input** block).
+
+**Response** is JSON — the contact flow reads `message` (TTS), `transfer_requested` (branching),
+and `transfer_phone`.
+
+### Generic SIP / CCaaS
+
+Extend `CcaasVoiceHandler` (`src/telephony/ccaas_base.py`) to support any RFC 3261 SIP provider
+or custom CCaaS platform.  Implement the three abstract methods:
+
+- `handle_inbound` — greet and collect speech
+- `handle_process` — invoke the agent and return provider-native response
+- `handle_status_callback` — lifecycle events
+
+Call routing supports skill-based rules, VIP detection, SIP `X-*` headers, and fallback destinations
+(`src/telephony/call_router.py`).
 
 ---
 
@@ -469,11 +508,41 @@ Nexus emits lifecycle events to registered webhook URLs:
 | `conversation.ended` | Session closed |
 | `ticket.created` | Support ticket created |
 | `conversation.escalated` | Human transfer requested |
+| `feedback.suggestion` | Improvement suggestion generated |
+| `feedback.auto_adjust` | Agent parameters auto-adjusted |
+| `connect.contact_ended` | Amazon Connect call completed |
 
 **Templates** (import into your automation tool):
 
 - `docs/integrations/templates/n8n-workflow.json`
 - `docs/integrations/templates/zapier-setup.md`
+
+---
+
+## Continuous Improvement / Feedback Loop
+
+The feedback loop engine (`src/feedback/engine.py`) tracks agent performance over time
+and automatically suggests (or applies) parameter adjustments:
+
+| Trigger | Adjustment |
+|---------|------------|
+| Containment rate below target | Review escalation logs, add KB articles |
+| CSAT score below target | Adjust temperature, prompt tone, or max_tokens |
+| Hallucination rate > 15% | Lower temperature, reduce top_k |
+| Response time > 2000ms | Reduce model size or max_tokens |
+
+**API:**
+
+```bash
+# Run analysis and get suggestions
+curl http://localhost:8001/api/v1/feedback/voice_support/analyze
+
+# Auto-tune agent parameters
+curl -X POST http://localhost:8001/api/v1/feedback/voice_support/auto-adjust
+
+# Get full feedback report
+curl http://localhost:8001/api/v1/feedback/voice_support/report
+```
 
 ---
 
@@ -545,7 +614,14 @@ voice-agents/
 │   ├── agents/                     # LangChain tools
 │   ├── rag/                        # Ingestion, vector store, retriever
 │   ├── llm/                        # Factory, guardrails, grounding
-│   ├── telephony/                  # Twilio, call router, STT/TTS
+│   ├── telephony/                  # CCaaS adapters, call router, STT/TTS
+│   │   ├── ccaas_base.py           # Abstract CCaaS voice handler
+│   │   ├── twilio_handler.py       # Twilio TwiML adapter
+│   │   ├── amazon_connect_handler.py  # Amazon Connect Lambda adapter
+│   │   └── call_router.py          # Skill routing, SIP, VIP
+│   ├── feedback/                   # Feedback loop & continuous improvement
+│   │   ├── engine.py               # CSAT-driven parameter tuning
+│   │   └── __init__.py
 │   ├── integrations/               # CRM, webhooks, secrets vault
 │   ├── evaluation/                 # Quality evaluator
 │   └── prompts/                    # Channel prompt templates
@@ -578,6 +654,10 @@ Copy `config/environment/.env.example` → `config/environment/.env`:
 | `TWILIO_AUTH_TOKEN` | No | Twilio auth |
 | `TWILIO_PHONE_NUMBER` | No | Your Twilio number |
 | `TWILIO_WEBHOOK_BASE_URL` | No | ngrok or production URL |
+| `AWS_ACCESS_KEY_ID` | No | Amazon Connect API access |
+| `AWS_SECRET_ACCESS_KEY` | No | Amazon Connect API secret |
+| `AWS_REGION` | No | AWS region (default: us-east-1) |
+| `AMAZON_CONNECT_INSTANCE_ID` | No | Amazon Connect instance for outbound calls |
 | `HUBSPOT_API_KEY` | No | Live HubSpot CRM (mock if empty) |
 | `INTEGRATIONS_ENCRYPTION_KEY` | No | Fernet key for `data/integrations.vault` |
 | `SETTINGS_ADMIN_TOKEN` | No | Protect credential saves with `X-Settings-Token` header |
@@ -608,7 +688,7 @@ Optional providers can be configured in the **Nexus sidebar → Integrations** p
 pytest tests/ tests/e2e/ -v      # quick local run
 ```
 
-75+ tests run in offline mock mode (no API keys). Report: [`tests/reports/TEST_REPORT.md`](tests/reports/TEST_REPORT.md)
+130+ tests run in offline mock mode (no API keys). Report: [`tests/reports/TEST_REPORT.md`](tests/reports/TEST_REPORT.md)
 
 ---
 

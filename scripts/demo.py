@@ -236,17 +236,22 @@ async def mc(page, x, y, steps=30, delay=0.012):
 
 async def ct(page, sel):
     box = await page.locator(sel).bounding_box()
-    if box: await mc(page, int(box["x"]+box["width"]/2), int(box["y"]+box["height"]/2))
+    if box:
+        await mc(page, int(box["x"]+box["width"]/2), int(box["y"]+box["height"]/2))
 
 def ensure_server():
     try:
-        urllib.request.urlopen(f"{URL}/api/v1/health", timeout=3); return None
+        urllib.request.urlopen(f"{URL}/api/v1/health", timeout=3)
+        return None
     except Exception:
         print("Starting server...")
         proc = subprocess.Popen([sys.executable,"-m","uvicorn","src.main:app","--host","127.0.0.1","--port","8001"],cwd=ROOT_DIR,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
         for _ in range(30):
-            try: urllib.request.urlopen(f"{URL}/api/v1/health", timeout=2); return proc
-            except: time.sleep(1)
+            try:
+                urllib.request.urlopen(f"{URL}/api/v1/health", timeout=2)
+                return proc
+            except Exception:
+                time.sleep(1)
         raise RuntimeError("Server did not start")
 
 
@@ -273,7 +278,8 @@ async def main():
                 headers=headers, json={"model":"tts-1","voice":args.voice,
                 "input":sc["narration"],"response_format":"mp3"})
             r.raise_for_status()
-            with open(out, "wb") as f: f.write(r.content)
+            with open(out, "wb") as f:
+                f.write(r.content)
             dur = float(subprocess.check_output(["ffprobe","-v","error","-show_entries","format=duration","-of","csv=p=0",out]).strip())
             tts_segments.append({"path": out, "dur": dur})
             print(f"  Scene {idx+1}: {dur:.1f}s")
@@ -330,14 +336,16 @@ async def main():
                 click1, wait1, click2, wait2 = click_actions
                 await wait(wait1)
                 if click1:
-                    await ct(page, click1); await wait(0.3)
+                    await ct(page, click1)
+                    await wait(0.3)
                     await page.locator(click1).click()
                 elif click1 is None:
                     # JS click for sidebar close
                     await page.evaluate('document.getElementById("sidebarCloseBtn")?.click()')
                 await wait(wait2)
                 if click2:
-                    await ct(page, click2); await wait(0.3)
+                    await ct(page, click2)
+                    await wait(0.3)
                     await page.locator(click2).click()
                 elif click2 is None:
                     await page.evaluate('document.getElementById("sidebarCloseBtn")?.click()')
@@ -385,7 +393,8 @@ async def main():
     shutil.rmtree(workdir, ignore_errors=True)
     print(f"Done: {output} ({os.path.getsize(output)/1e6:.1f} MB)")
 
-    if server_proc: server_proc.kill()
+    if server_proc:
+        server_proc.kill()
 
 
 if __name__ == "__main__":

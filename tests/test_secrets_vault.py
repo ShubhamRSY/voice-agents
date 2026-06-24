@@ -1,6 +1,5 @@
 """Tests for encrypted integrations vault."""
 
-import json
 from pathlib import Path
 
 import pytest

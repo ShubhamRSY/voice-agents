@@ -7,8 +7,6 @@ import json
 import sqlite3
 import time
 from pathlib import Path
-from typing import Any
-
 import structlog
 
 from src.config import DATA_DIR
@@ -17,7 +15,7 @@ logger = structlog.get_logger()
 
 DB_PATH = DATA_DIR / "nexus.db"
 
-_SCHEMA_VERSION = 2
+_SCHEMA_VERSION = 3
 
 
 def get_connection() -> sqlite3.Connection:
@@ -146,6 +144,60 @@ def _run_migrations(conn: sqlite3.Connection, current: int) -> None:
             (2, "Add migrations_log table for tracking schema history"),
         )
         logger.info("migration_002_applied")
+
+    if current < 3:
+        conn.executescript("""
+            CREATE TABLE IF NOT EXISTS feedback_loop_config (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                tenant_id TEXT NOT NULL REFERENCES tenants(id),
+                agent_id TEXT NOT NULL,
+                enabled INTEGER NOT NULL DEFAULT 1,
+                csat_target REAL NOT NULL DEFAULT 4.0,
+                containment_target REAL NOT NULL DEFAULT 0.75,
+                adjustment_temperature REAL,
+                adjustment_max_tokens INTEGER,
+                created_at REAL NOT NULL DEFAULT (strftime('%s','now')),
+                updated_at REAL NOT NULL DEFAULT (strftime('%s','now'))
+            );
+
+            CREATE TABLE IF NOT EXISTS agent_performance_trends (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                tenant_id TEXT NOT NULL REFERENCES tenants(id),
+                agent_id TEXT NOT NULL,
+                period_hours INTEGER NOT NULL DEFAULT 24,
+                containment_rate REAL DEFAULT 0.0,
+                avg_csat REAL DEFAULT 0.0,
+                avg_response_time_ms REAL DEFAULT 0.0,
+                hallucination_rate REAL DEFAULT 0.0,
+                csat_count INTEGER DEFAULT 0,
+                sample_count INTEGER DEFAULT 0,
+                recorded_at REAL NOT NULL DEFAULT (strftime('%s','now'))
+            );
+
+            CREATE TABLE IF NOT EXISTS improvement_suggestions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                tenant_id TEXT NOT NULL REFERENCES tenants(id),
+                agent_id TEXT NOT NULL,
+                category TEXT NOT NULL,
+                title TEXT NOT NULL,
+                description TEXT NOT NULL,
+                suggested_action TEXT NOT NULL DEFAULT '',
+                metric_before REAL DEFAULT 0.0,
+                metric_after REAL DEFAULT 0.0,
+                applied INTEGER NOT NULL DEFAULT 0,
+                created_at REAL NOT NULL DEFAULT (strftime('%s','now'))
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_feedback_agent ON feedback_loop_config(tenant_id, agent_id);
+            CREATE INDEX IF NOT EXISTS idx_trends_agent ON agent_performance_trends(tenant_id, agent_id);
+            CREATE INDEX IF NOT EXISTS idx_suggestions_agent ON improvement_suggestions(tenant_id, agent_id);
+            PRAGMA user_version = 3;
+        """)
+        conn.execute(
+            "INSERT INTO migrations_log (version, description) VALUES (?, ?)",
+            (3, "Add feedback loop tables for continuous improvement"),
+        )
+        logger.info("migration_003_applied")
 
 
 def init_db() -> None:

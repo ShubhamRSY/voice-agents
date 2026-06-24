@@ -1,10 +1,8 @@
 """Enterprise Voice & Chat AI Agent Platform — entry point with WebSocket, metrics, middleware."""
 
 import asyncio
-import json
 import time
 from contextlib import asynccontextmanager
-from pathlib import Path
 from typing import Any
 
 import structlog
@@ -22,7 +20,8 @@ from src.integrations.secrets_vault import get_secrets_vault
 from src.logging_config import setup_logging
 from src.middleware import RateLimitMiddleware, TenantMiddleware
 from src.tasks import task_queue
-from src.observability import setup_sentry, setup_opentelemetry, collector
+from src.observability import setup_sentry, setup_opentelemetry
+from src.workflows.orchestrator import AgentOrchestrator
 
 STATIC_DIR = ROOT_DIR / "static"
 

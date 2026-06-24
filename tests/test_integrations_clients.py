@@ -134,7 +134,6 @@ class TestSlackNotifier:
 
 class TestWhatsAppMessenger:
     def test_not_configured(self):
-        settings_patch = {}
         with patch("src.integrations.whatsapp.get_settings") as mock_settings:
             mock_settings.return_value.twilio_account_sid = ""
             mock_settings.return_value.twilio_auth_token = ""

@@ -101,9 +101,9 @@ async def draft_response(context: str, tone: str = "professional") -> str:
             result = await llm.ainvoke(prompt)
             draft = result.content if hasattr(result, 'content') else str(result)
         except Exception:
-            draft = f"Based on the context provided, here is a suggested response."
+            draft = "Based on the context provided, here is a suggested response."
     else:
-        draft = f"Based on the context provided, here is a suggested response."
+        draft = "Based on the context provided, here is a suggested response."
 
     return json.dumps({
         "draft": draft,

@@ -10,7 +10,7 @@ from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 from fastapi.responses import Response
 from pydantic import BaseModel, Field
 
-from src.analytics import AnalyticsEngine, analytics
+from src.analytics import analytics
 from src.api.session_manager import SessionManager
 from src.auth import (
     AuthContext,
@@ -23,7 +23,8 @@ from src.auth import (
 from src.config import Settings, get_settings, reload_settings
 from src.database import db
 from src.evaluation.evaluator import AgentEvaluator
-from src.integrations.crm import CRMClient, HubSpotClient
+from src.feedback.engine import FeedbackEngine
+
 from src.integrations.secrets_vault import CREDENTIAL_KEYS, WEBHOOK_EVENTS, get_secrets_vault
 from src.integrations.webhooks import IntegrationRouter
 from src.integrations.whatsapp import WhatsAppMessenger
@@ -820,13 +821,14 @@ async def voice_stream_sse(request: Request):
             yield f"data: {json.dumps({'type': 'token', 'content': chunk, 'index': i, 'total': len(tokens)})}\n\n"
             await asyncio.sleep(0.03)
 
-        yield f"data: {json.dumps({
+        done_payload = json.dumps({
             'type': 'done',
             'content': response_text,
             'agent_id': result.get('agent_id'),
             'tool_calls': result.get('tool_calls', []),
             'metrics': result.get('metrics', {}),
-        })}\n\n"
+        })
+        yield f"data: {done_payload}\n\n"
 
     return StreamingResponse(event_stream(), media_type="text/event-stream", headers={
         "Cache-Control": "no-cache",
@@ -938,5 +940,60 @@ async def observability_health() -> dict:
         "requests_processed": snap["counters"].get("requests_total", 0),
         "errors": snap["counters"].get("errors_total", 0),
         "active_tasks": len(task_queue._active),
-        "queued_tasks": qsize,
-    }
+    "queued_tasks": qsize,
+        }
+
+
+# ---------------------------------------------------------------------------
+# Continuous improvement / feedback loop
+# ---------------------------------------------------------------------------
+
+@router.get("/feedback/{agent_id}/report")
+async def feedback_report(agent_id: str, tenant_id: str = "default") -> dict:
+    engine = FeedbackEngine(tenant_id)
+    return engine.get_feedback_report(agent_id)
+
+
+@router.get("/feedback/{agent_id}/analyze")
+async def feedback_analyze(agent_id: str, tenant_id: str = "default") -> dict:
+    engine = FeedbackEngine(tenant_id)
+    suggestions = engine.analyze(agent_id)
+    return {"agent_id": agent_id, "suggestions": suggestions}
+
+
+@router.post("/feedback/{agent_id}/snapshot")
+async def feedback_snapshot(agent_id: str, hours: int = 24, tenant_id: str = "default") -> dict:
+    engine = FeedbackEngine(tenant_id)
+    return engine.record_snapshot(agent_id, hours)
+
+
+@router.get("/feedback/{agent_id}/config")
+async def feedback_get_config(agent_id: str, tenant_id: str = "default") -> dict:
+    engine = FeedbackEngine(tenant_id)
+    return engine.get_config(agent_id)
+
+
+@router.put("/feedback/{agent_id}/config")
+async def feedback_update_config(agent_id: str, body: dict, tenant_id: str = "default") -> dict:
+    engine = FeedbackEngine(tenant_id)
+    return engine.upsert_config(agent_id, **body)
+
+
+@router.get("/feedback/{agent_id}/suggestions")
+async def feedback_suggestions(agent_id: str, tenant_id: str = "default") -> dict:
+    engine = FeedbackEngine(tenant_id)
+    return {"suggestions": engine.get_suggestions(agent_id)}
+
+
+@router.post("/feedback/suggestions/{suggestion_id}/apply")
+async def feedback_apply_suggestion(suggestion_id: int, tenant_id: str = "default") -> dict:
+    engine = FeedbackEngine(tenant_id)
+    engine.mark_applied(suggestion_id)
+    return {"status": "applied", "suggestion_id": suggestion_id}
+
+
+@router.post("/feedback/{agent_id}/auto-adjust")
+async def feedback_auto_adjust(agent_id: str, tenant_id: str = "default") -> dict:
+    engine = FeedbackEngine(tenant_id)
+    adjustments = engine.apply_auto_adjustment(agent_id)
+    return {"agent_id": agent_id, "adjustments": adjustments or "none_needed"}

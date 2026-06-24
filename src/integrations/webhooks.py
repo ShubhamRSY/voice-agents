@@ -105,6 +105,25 @@ class IntegrationRouter:
             "reason": reason,
         })
 
+    async def on_feedback_suggestion(self, agent_id: str, suggestion: dict) -> None:
+        await self._emit("feedback.suggestion", {
+            "agent_id": agent_id,
+            **suggestion,
+        })
+
+    async def on_feedback_auto_adjust(self, agent_id: str, adjustments: dict) -> None:
+        await self._emit("feedback.auto_adjust", {
+            "agent_id": agent_id,
+            "adjustments": adjustments,
+        })
+
+    async def on_connect_contact_ended(self, contact_id: str, status: str, metrics: dict | None = None) -> None:
+        await self._emit("connect.contact_ended", {
+            "contact_id": contact_id,
+            "status": status,
+            **(metrics or {}),
+        })
+
     async def _emit(self, event_type: str, data: dict) -> None:
         url = self.webhooks.get(event_type)
         if url:

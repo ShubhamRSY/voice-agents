@@ -1,5 +1,4 @@
 """Comprehensive live E2E tests against running server at 127.0.0.1:8001."""
-import json
 import time
 import uuid
 import pytest

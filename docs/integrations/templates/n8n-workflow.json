@@ -1,9 +1,9 @@
 {
-  "name": "Voice Agents → CRM + Slack (Example)",
+  "name": "Nexus Agent Events → CRM + Slack + Amazon Connect (Example)",
   "nodes": [
     {
       "parameters": {
-        "path": "voice-agents-events",
+        "path": "nexus-agent-events",
         "options": {}
       },
       "id": "Webhook",
@@ -28,7 +28,43 @@
       "name": "IF ticket.created",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2,
-      "position": [520, 240]
+      "position": [520, 160]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json[\"body\"][\"event\"]}}",
+              "operation": "equals",
+              "value2": "feedback.suggestion"
+            }
+          ]
+        }
+      },
+      "id": "IfFeedback",
+      "name": "IF feedback.suggestion",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [520, 320]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json[\"body\"][\"event\"]}}",
+              "operation": "equals",
+              "value2": "conversation.escalated"
+            }
+          ]
+        }
+      },
+      "id": "IfEscalated",
+      "name": "IF conversation.escalated",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [520, 480]
     },
     {
       "parameters": {
@@ -42,7 +78,7 @@
       "name": "HTTP Request (Create Ticket)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
-      "position": [780, 160]
+      "position": [780, 80]
     },
     {
       "parameters": {
@@ -50,13 +86,41 @@
         "method": "POST",
         "jsonParameters": true,
         "options": {},
-        "bodyParametersJson": "={\"text\": \"New agent event: {{$json.body.event}}\\nSession: {{$json.body.data.session_id || 'n/a'}}\"}"
+        "bodyParametersJson": "={\"text\": \"Nexus agent event: {{$json.body.event}}\\nAgent: {{$json.body.data.agent_id || 'n/a'}}\\nSession: {{$json.body.data.session_id || 'n/a'}}\"}"
       },
       "id": "SlackNotify",
-      "name": "Slack Webhook (Notify)",
+      "name": "Slack Webhook (Notify All Events)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
-      "position": [780, 320]
+      "position": [780, 240]
+    },
+    {
+      "parameters": {
+        "url": "https://example.amazonconnect.com/contact-flow-endpoint",
+        "method": "POST",
+        "jsonParameters": true,
+        "options": {},
+        "bodyParametersJson": "={\"Details\":{\"ContactData\":{\"Attributes\":{\"recommendation\":$json.body.data.title || $json.body.event}}}}"
+      },
+      "id": "ConnectFeedback",
+      "name": "Amazon Connect Feedback Action",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [780, 400]
+    },
+    {
+      "parameters": {
+        "url": "https://hooks.slack.com/services/XXX/YYY/ZZZ",
+        "method": "POST",
+        "jsonParameters": true,
+        "options": {},
+        "bodyParametersJson": "={\"text\": \"🚨 Escalation: {{$json.body.data.reason}}\\nSession: {{$json.body.data.session_id}}\\nChannel: {{$json.body.data.channel}}\"}"
+      },
+      "id": "EscalationSlack",
+      "name": "Slack Escalation Alert",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [780, 560]
     }
   ],
   "connections": {
@@ -65,6 +129,16 @@
         [
           {
             "node": "IF ticket.created",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "IF feedback.suggestion",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "IF conversation.escalated",
             "type": "main",
             "index": 0
           }
@@ -82,7 +156,43 @@
         ],
         [
           {
-            "node": "Slack Webhook (Notify)",
+            "node": "Slack Webhook (Notify All Events)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF feedback.suggestion": {
+      "main": [
+        [
+          {
+            "node": "Amazon Connect Feedback Action",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Slack Webhook (Notify All Events)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF conversation.escalated": {
+      "main": [
+        [
+          {
+            "node": "Slack Escalation Alert",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Slack Webhook (Notify All Events)",
             "type": "main",
             "index": 0
           }
@@ -92,6 +202,5 @@
   },
   "active": false,
   "settings": {},
-  "versionId": "template"
+  "versionId": "v2-amazon-connect"
 }
-

@@ -9,7 +9,6 @@ from typing import Any
 import structlog
 
 from src.config import load_agent_config, project_path
-from src.llm.hallucination import score_grounding
 from src.workflows.orchestrator import AgentOrchestrator
 
 logger = structlog.get_logger()

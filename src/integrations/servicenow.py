@@ -1,7 +1,5 @@
 """ServiceNow adapter for incident/request management."""
 
-from typing import Any
-
 import httpx
 import structlog
 

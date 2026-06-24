@@ -1,7 +1,5 @@
 """Tests for LLM parameters, guardrails, grounding, and prompts."""
 
-import pytest
-
 from src.llm.guardrails import check_input, check_output
 from src.llm.hallucination import score_grounding
 from src.llm.params import resolve_llm_params

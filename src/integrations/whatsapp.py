@@ -1,7 +1,5 @@
 """WhatsApp/SMS messaging channel via Twilio Messaging API."""
 
-from typing import Any
-
 import httpx
 import structlog
 from fastapi import HTTPException

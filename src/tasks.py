@@ -2,7 +2,7 @@
 
 import asyncio
 import time
-from typing import Any, Coroutine
+from typing import Any
 
 import structlog
 

@@ -1,7 +1,5 @@
 """Zendesk adapter for ticket CRUD and contact search."""
 
-from typing import Any
-
 import httpx
 import structlog
 
