@@ -3,318 +3,243 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Nexus — Enterprise AI Agent Platform | Technical Architecture</title>
+<title>Nexus — AI Ops Platform</title>
 <style>
   :root {
     --primary: #2563eb;
     --primary-dark: #1d4ed8;
-    --gray-50: #f9fafb;
-    --gray-100: #f3f4f6;
-    --gray-200: #e5e7eb;
-    --gray-300: #d1d5db;
-    --gray-600: #4b5563;
-    --gray-700: #374151;
-    --gray-800: #1f2937;
-    --gray-900: #111827;
+    --bg: #f9fafb;
+    --surface: #ffffff;
+    --text: #1f2937;
+    --text-muted: #6b7280;
+    --border: #e5e7eb;
+    --accent: #38bdf8;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-    color: var(--gray-800);
-    background: var(--gray-50);
+    color: var(--text);
+    background: var(--bg);
     line-height: 1.7;
   }
-  .header {
-    background: linear-gradient(135deg, var(--gray-900) 0%, var(--primary-dark) 100%);
+  .hero {
+    background: linear-gradient(135deg, #0f172a 0%, #1d4ed8 100%);
     color: white;
-    padding: 64px 0 48px;
+    padding: 80px 0 60px;
     text-align: center;
   }
-  .header h1 { font-size: 2.5rem; font-weight: 700; margin-bottom: 8px; }
-  .header .subtitle { font-size: 1.2rem; opacity: 0.85; margin-bottom: 4px; }
-  .header .version { font-size: 0.9rem; opacity: 0.6; }
-  .container { max-width: 1000px; margin: 0 auto; padding: 0 24px; }
-  .content { padding: 48px 0; }
-  section { margin-bottom: 48px; }
+  .hero h1 { font-size: 3rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 12px; }
+  .hero .tagline { font-size: 1.3rem; opacity: 0.85; margin-bottom: 8px; }
+  .hero .sub { font-size: 1rem; opacity: 0.6; }
+  .container { max-width: 960px; margin: 0 auto; padding: 0 24px; }
+  .content { padding: 56px 0; }
+  section { margin-bottom: 56px; }
   h2 {
-    font-size: 1.6rem;
+    font-size: 1.5rem;
     font-weight: 600;
-    color: var(--gray-900);
+    color: var(--text);
     border-bottom: 3px solid var(--primary);
     padding-bottom: 8px;
     margin-bottom: 24px;
   }
-  h3 { font-size: 1.2rem; font-weight: 600; color: var(--gray-700); margin: 24px 0 12px; }
-  p { margin-bottom: 16px; color: var(--gray-600); }
+  h3 { font-size: 1.1rem; font-weight: 600; margin: 20px 0 10px; }
+  p { margin-bottom: 16px; color: var(--text-muted); }
   table {
     width: 100%;
     border-collapse: collapse;
     margin: 16px 0 24px;
-    font-size: 0.9rem;
+    font-size: 0.95rem;
   }
   th, td {
-    padding: 10px 14px;
+    border: 1px solid var(--border);
+    padding: 12px 16px;
     text-align: left;
-    border-bottom: 1px solid var(--gray-200);
+    vertical-align: top;
   }
-  th { background: var(--gray-100); font-weight: 600; color: var(--gray-700); }
-  tr:hover { background: var(--gray-50); }
-  .badge {
-    display: inline-block;
-    padding: 2px 10px;
-    border-radius: 12px;
-    font-size: 0.8rem;
-    font-weight: 500;
-  }
-  .badge-green { background: #dcfce7; color: #166534; }
-  .badge-yellow { background: #fef9c3; color: #854d0e; }
-  .badge-blue { background: #dbeafe; color: #1e40af; }
+  th { background: #f3f4f6; font-weight: 600; color: var(--text); }
+  td { color: var(--text-muted); }
   pre {
-    background: var(--gray-800);
-    color: #e5e7eb;
+    background: #0f172a;
+    color: #e2e8f0;
     padding: 16px 20px;
-    border-radius: 8px;
+    border-radius: 10px;
     overflow-x: auto;
-    font-size: 0.85rem;
-    margin: 16px 0;
-    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+    font-size: 0.9rem;
+    margin: 16px 0 24px;
   }
-  code { font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: 0.85rem; }
-  p code { background: var(--gray-100); padding: 2px 6px; border-radius: 4px; }
-  .arch-box {
-    border: 2px solid var(--gray-200);
+  code { font-family: 'JetBrains Mono', 'Fira Code', monospace; }
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+    margin: 16px 0 24px;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
     border-radius: 12px;
-    padding: 20px;
-    margin: 16px 0;
-    background: white;
+    padding: 20px 24px;
   }
-  .arch-box .title { font-weight: 600; color: var(--primary); margin-bottom: 8px; }
-  .arch-inner {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-top: 8px;
+  .card h3 { margin-top: 0; font-size: 1rem; }
+  .card p { font-size: 0.9rem; margin-bottom: 0; }
+  .diagram {
+    background: #0f172a;
+    color: #94a3b8;
+    padding: 32px;
+    border-radius: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.9rem;
+    line-height: 2;
+    margin: 16px 0 24px;
+    text-align: center;
   }
-  .arch-inner > div {
-    background: var(--gray-100);
-    padding: 8px 14px;
-    border-radius: 6px;
-    font-size: 0.85rem;
-    color: var(--gray-700);
-  }
+  .diagram span.hl { color: #38bdf8; font-weight: 600; }
+  .diagram span.g { color: #4ade80; }
+  .diagram span.y { color: #facc15; }
   .footer {
     text-align: center;
     padding: 32px 0;
-    color: var(--gray-600);
-    font-size: 0.85rem;
-    border-top: 1px solid var(--gray-200);
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    border-top: 1px solid var(--border);
   }
-  @media (max-width: 768px) {
-    .header h1 { font-size: 1.8rem; }
-    table { font-size: 0.8rem; }
-    th, td { padding: 6px 8px; }
+  .footer a { color: var(--primary); text-decoration: none; }
+  .footer a:hover { text-decoration: underline; }
+  @media (max-width: 640px) {
+    .hero h1 { font-size: 2rem; }
+    .hero .tagline { font-size: 1.1rem; }
+    .cards { grid-template-columns: 1fr; }
   }
 </style>
 </head>
 <body>
 
-<div class="header">
+<div class="hero">
   <div class="container">
     <h1>Nexus</h1>
-    <div class="subtitle">Enterprise AI Agent Platform</div>
-    <div class="version">Technical Architecture Document — Version 2.0 | June 2026</div>
+    <p class="tagline">AI Ops Platform</p>
+    <p class="sub">Omnichannel AI command centre for customer support. Open source.</p>
   </div>
 </div>
 
 <div class="content">
   <div class="container">
 
-    <!-- 1. Executive Summary -->
+    <!-- What Nexus Does -->
     <section>
-      <h2>1. Executive Summary</h2>
-      <p>Nexus is a production-grade, omnichannel AI agent platform purpose-built for contact centers and customer-support automation. It deploys and operates AI agents across chat, voice (PSTN/CCaaS), and agent-assist copilot channels — all backed by a unified orchestration core, retrieval-augmented generation (RAG) pipeline, and enterprise integration layer.</p>
-      <p>The platform ships as a single FastAPI application with a built-in web console, REST API, offline mock mode for development and CI, and Docker-based deployment. It is designed for platform engineers, contact center operators, and developers who need a configurable, observable, and regression-tested AI agent runtime.</p>
+      <h2>What Nexus Does</h2>
+      <p>
+        Nexus replaces three separate tools &mdash; live chat, AI copilot, and phone system &mdash;
+        with one AI-powered console. Agents handle all customer interactions from a single interface,
+        with one AI orchestrator that remembers context across channels.
+      </p>
     </section>
 
-    <!-- 2. Design Principles -->
+    <!-- Capabilities -->
     <section>
-      <h2>2. Design Principles</h2>
+      <h2>Capabilities</h2>
       <table>
-        <tr><th>Principle</th><th>Description</th></tr>
-        <tr><td><strong>Omnichannel</strong></td><td>Single orchestrator serves chat, voice, and copilot with channel-specific prompts</td></tr>
-        <tr><td><strong>Configuration-driven</strong></td><td>Agent behavior, LLM parameters, and routing defined in YAML — no code changes required</td></tr>
-        <tr><td><strong>Grounded responses</strong></td><td>RAG retrieval precedes generation; every response carries grounding metrics</td></tr>
-        <tr><td><strong>Graceful degradation</strong></td><td>Mock LLM + keyword search when API keys or vector scores are unavailable</td></tr>
-        <tr><td><strong>Observable</strong></td><td>Structured logging, per-request metrics, automated evaluation for regression control</td></tr>
-        <tr><td><strong>Multi-tenant</strong></td><td>Tenant isolation at the middleware and database query level</td></tr>
+        <tr><th>Capability</th><th>What It Means</th></tr>
+        <tr><td><strong>Omnichannel Console</strong></td><td>Chat, copilot (agent-assist), and voice calls in one UI. No tab switching.</td></tr>
+        <tr><td><strong>Multi-LLM</strong></td><td>Swap between OpenAI, Anthropic Claude, and Google Gemini per conversation. No lock-in.</td></tr>
+        <tr><td><strong>Live Streaming</strong></td><td>AI responses stream token-by-token via SSE. Operators see answers form in real time.</td></tr>
+        <tr><td><strong>Voice (PSTN)</strong></td><td>Inbound and outbound calls through Twilio. Live transcription, AI voice responses.</td></tr>
+        <tr><td><strong>Amazon Connect</strong></td><td>Lambda-style webhook handler for AWS Connect contact flows.</td></tr>
+        <tr><td><strong>Generic SIP/CCaaS</strong></td><td>Abstract base class to add any SIP or CCaaS provider.</td></tr>
+        <tr><td><strong>Feedback Engine</strong></td><td>Post-interaction CSAT surveys trigger automatic AI behaviour tuning. No manual tweaking.</td></tr>
+        <tr><td><strong>RAG</strong></td><td>Retrieval-augmented generation grounded in your knowledge base. Citations on every answer.</td></tr>
+        <tr><td><strong>Audit Trail</strong></td><td>Every message, tool call, and response logged with timestamps. Compliance-ready.</td></tr>
+        <tr><td><strong>Encrypted Vault</strong></td><td>API keys stored in AES-256-GCM encrypted database. Never logged or hardcoded.</td></tr>
       </table>
     </section>
 
-    <!-- 3. System Architecture -->
+    <!-- Channels -->
     <section>
-      <h2>3. System Architecture</h2>
-
-      <div class="arch-box">
-        <div class="title">Customer &amp; Agent Channels</div>
-        <div class="arch-inner">
-          <div>Web Console (Chat · Copilot · Voice Simulator)</div>
-          <div>PSTN / CCaaS (Twilio · AWS Connect · SIP)</div>
-          <div>REST API Clients (CCaaS · CRM · Custom Apps)</div>
+      <h2>Channels</h2>
+      <div class="cards">
+        <div class="card">
+          <h3>Chat</h3>
+          <p>Live AI conversation via the web console. Streams responses token by token. Full conversation history preserved.</p>
         </div>
-      </div>
-
-      <div style="text-align:center;color:var(--gray-300);font-size:1.5rem;margin:-8px 0;">▼</div>
-
-      <div class="arch-box">
-        <div class="title">API Gateway (FastAPI)</div>
-        <div class="arch-inner">
-          <div>CORS Middleware</div>
-          <div>Tenant Isolation</div>
-          <div>Rate Limiting (60 rpm)</div>
-          <div>REST Router (~60 endpoints)</div>
-          <div>WebSocket Streaming</div>
-          <div>OpenAPI /docs</div>
+        <div class="card">
+          <h3>Copilot</h3>
+          <p>Paste support ticket transcripts. AI analyses and suggests replies. Human reviews before sending.</p>
         </div>
-      </div>
-
-      <div style="text-align:center;color:var(--gray-300);font-size:1.5rem;margin:-8px 0;">▼</div>
-
-      <div class="arch-box">
-        <div class="title">Agent Runtime (LangGraph ReAct Loop)</div>
-        <div class="arch-inner">
-          <div>Orchestrator</div>
-          <div>Prompt Templates</div>
-          <div>Guardrails</div>
-          <div>Grounding Scorer</div>
-          <div>Tool Executor</div>
-          <div>Evaluation Engine</div>
-        </div>
-      </div>
-
-      <div style="text-align:center;color:var(--gray-300);font-size:1.5rem;margin:-8px 0;">▼</div>
-
-      <div class="arch-box">
-        <div class="title">Tools, Integrations &amp; Knowledge</div>
-        <div class="arch-inner">
-          <div>CRM (HubSpot · Salesforce)</div>
-          <div>Telephony (Twilio · AWS Connect · SIP)</div>
-          <div>iPaaS Webhooks (n8n · Zapier)</div>
-          <div>Vector Store (ChromaDB)</div>
-          <div>Secrets Vault (Fernet)</div>
-          <div>Feedback Engine</div>
+        <div class="card">
+          <h3>Voice</h3>
+          <p>Inbound and outbound Twilio calls. Live speech-to-text transcription. AI voice responses via text-to-speech.</p>
         </div>
       </div>
     </section>
 
-    <!-- 4. Core Components -->
+    <!-- Integrations -->
     <section>
-      <h2>4. Core Components</h2>
-
-      <h3>4.1 Agent Configuration</h3>
+      <h2>Integrations</h2>
       <table>
-        <tr><th>Agent</th><th>Channel</th><th>LLM</th><th>Temperature</th><th>Tools</th></tr>
-        <tr><td><code>voice_support</code></td><td>Voice (Twilio, AWS Connect)</td><td>GPT-4o-mini</td><td>0.3</td><td>lookup, search, ticket, transfer</td></tr>
-        <tr><td><code>chat_support</code></td><td>Web Chat</td><td>GPT-4o-mini</td><td>0.4</td><td>lookup, search, ticket, update_crm, transfer</td></tr>
-        <tr><td><code>copilot</code></td><td>Agent Assist</td><td>GPT-4o-mini</td><td>0.2</td><td>search, draft, summarize</td></tr>
-        <tr><td><code>whatsapp_support</code></td><td>WhatsApp</td><td>GPT-4o-mini</td><td>0.35</td><td>lookup, search, ticket</td></tr>
-      </table>
-
-      <h3>4.2 Supported Integrations</h3>
-      <table>
-        <tr><th>Integration</th><th>Type</th><th>Purpose</th></tr>
-        <tr><td>HubSpot / Salesforce</td><td>CRM</td><td>Contact lookup, ticket management</td></tr>
-        <tr><td>Twilio</td><td>Telephony</td><td>PSTN voice calls, TwiML, SIP</td></tr>
-        <tr><td>Amazon Connect</td><td>Telephony</td><td>AWS cloud contact center voice</td></tr>
-        <tr><td>Zendesk</td><td>Ticketing</td><td>Ticket CRUD operations</td></tr>
-        <tr><td>ServiceNow</td><td>ITSM</td><td>Incident and request management</td></tr>
-        <tr><td>Slack</td><td>Notification</td><td>Alerts, escalation notifications</td></tr>
-        <tr><td>WhatsApp (Twilio)</td><td>Messaging</td><td>SMS/WhatsApp channel</td></tr>
-        <tr><td>n8n / Zapier</td><td>iPaaS</td><td>Outbound webhook lifecycle events</td></tr>
-        <tr><td>ChromaDB</td><td>Vector Store</td><td>Semantic search, RAG retrieval</td></tr>
-      </table>
-
-      <h3>4.3 Feedback Loop</h3>
-      <p>The continuous improvement engine tracks agent performance over time and automatically adjusts LLM parameters:</p>
-      <table>
-        <tr><th>Trigger</th><th>Adjustment</th></tr>
-        <tr><td>Containment rate below target</td><td>Review escalation logs, add KB articles</td></tr>
-        <tr><td>CSAT score below target</td><td>Adjust temperature, prompt tone, or max_tokens</td></tr>
-        <tr><td>Hallucination rate &gt; 15%</td><td>Lower temperature, reduce top_k</td></tr>
-        <tr><td>Response time &gt; 2000ms</td><td>Reduce model size or max_tokens</td></tr>
+        <tr><th>Category</th><th>Providers</th></tr>
+        <tr><td><strong>LLMs</strong></td><td>OpenAI GPT-4o, Anthropic Claude 3.5, Google Gemini 2.0</td></tr>
+        <tr><td><strong>Telephony</strong></td><td>Twilio (PSTN + WhatsApp), Amazon Connect, generic SIP/CCaaS</td></tr>
+        <tr><td><strong>CRMs</strong></td><td>Salesforce, Zendesk, ServiceNow</td></tr>
+        <tr><td><strong>Notifications</strong></td><td>Slack</td></tr>
+        <tr><td><strong>iPaaS</strong></td><td>n8n, Zapier &mdash; event-driven automation for ticket creation, feedback, escalations</td></tr>
       </table>
     </section>
 
-    <!-- 5. Deployment -->
+    <!-- How It Works -->
     <section>
-      <h2>5. Deployment</h2>
-      <h3>5.1 Docker</h3>
-      <pre>FROM python:3.11-slim
-EXPOSE 8000
-HEALTHCHECK --interval=30s --start-period=15s --retries=3 \
-  CMD curl -sf http://localhost:8000/api/v1/health
-CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]</pre>
-
-      <h3>5.2 CI/CD Pipeline</h3>
+      <h2>How It Works</h2>
       <table>
-        <tr><th>Stage</th><th>Environment</th><th>Commands</th></tr>
-        <tr><td>Lint</td><td>ubuntu-latest</td><td><code>ruff check</code>, <code>mypy</code></td></tr>
-        <tr><td>Unit Tests</td><td>Python 3.11, 3.12</td><td><code>pytest</code> (ignoring e2e)</td></tr>
-        <tr><td>E2E Tests</td><td>Python 3.11</td><td>Live server + <code>pytest tests/e2e/</code></td></tr>
-        <tr><td>Docker</td><td>ubuntu-latest</td><td>Build + smoke test (main only)</td></tr>
-      </table>
-
-      <h3>5.3 Requirements</h3>
-      <p>Python ≥ 3.11 · SQLite 3 · ChromaDB · No external services required for development/mock mode</p>
-    </section>
-
-    <!-- 6. Security -->
-    <section>
-      <h2>6. Security</h2>
-      <table>
-        <tr><th>Measure</th><th>Implementation</th></tr>
-        <tr><td>Authentication</td><td>JWT-based with configurable enforcement</td></tr>
-        <tr><td>Multi-tenancy</td><td>Middleware isolation + parameterized queries</td></tr>
-        <tr><td>Credential storage</td><td>Fernet (AES-128) encrypted vault at rest</td></tr>
-        <tr><td>API key masking</td><td>All credential responses show only masked values</td></tr>
-        <tr><td>Webhook signing</td><td>HMAC-SHA256 signatures on outbound webhooks</td></tr>
-        <tr><td>Rate limiting</td><td>60 requests per minute per tenant (configurable)</td></tr>
-        <tr><td>Input sanitization</td><td>Prompt injection guardrails + output filtering</td></tr>
+        <tr><th>Step</th><th>What Happens</th></tr>
+        <tr><td>1</td><td>A customer messages via chat, calls by phone, or an agent opens Copilot mode.</td></tr>
+        <tr><td>2</td><td>Nexus routes the request to the configured LLM with channel-specific prompts.</td></tr>
+        <tr><td>3</td><td>The AI retrieves relevant knowledge from the vector database (RAG).</td></tr>
+        <tr><td>4</td><td>The response streams back to the operator or is spoken to the caller via TTS.</td></tr>
+        <tr><td>5</td><td>The interaction is logged. If feedback is collected, the engine adjusts behaviour automatically.</td></tr>
       </table>
     </section>
 
-    <!-- 7. Testing -->
+    <!-- Quick Start -->
     <section>
-      <h2>7. Testing Strategy</h2>
-      <table>
-        <tr><th>Category</th><th>Scope</th><th>Tools</th></tr>
-        <tr><td>Unit</td><td>Agent logic, guardrails, routing, tools</td><td>pytest, pytest-asyncio</td></tr>
-        <tr><td>Integration</td><td>API endpoints, database, telephony</td><td>FastAPI TestClient</td></tr>
-        <tr><td>E2E</td><td>Full user journeys, multi-turn conversations</td><td>httpx, live server</td></tr>
-        <tr><td>Non-functional</td><td>Latency, concurrency, CORS, error handling</td><td>pytest-timeout</td></tr>
-        <tr><td>Evaluation</td><td>Containment rate, tool accuracy, hallucination</td><td>AgentEvaluator suite</td></tr>
-      </table>
-      <p>All 158+ tests run in offline mock mode with zero external dependencies.</p>
+      <h2>Quick Start</h2>
+      <pre><code>git clone https://github.com/ShubhamRSY/voice-agents.git
+cd voice-agents
+pip install -e ".[dev]"
+cp .env.example .env    # add your API keys
+uvicorn src.main:app --reload --port 8001</code></pre>
+      <p>Open <a href="http://localhost:8001">http://localhost:8001</a> in a browser.</p>
     </section>
 
-    <!-- 8. Roadmap -->
+    <!-- Deployment -->
     <section>
-      <h2>8. Capability Matrix</h2>
+      <h2>Deployment</h2>
       <table>
-        <tr><th>Capability</th><th>Status</th></tr>
-        <tr><td>Omnichannel chat + voice + copilot</td><td><span class="badge badge-green">Delivered</span></td></tr>
-        <tr><td>Twilio PSTN integration</td><td><span class="badge badge-green">Delivered</span></td></tr>
-        <tr><td>Amazon Connect adapter</td><td><span class="badge badge-green">Delivered</span></td></tr>
-        <tr><td>RAG with semantic + keyword fallback</td><td><span class="badge badge-green">Delivered</span></td></tr>
-        <tr><td>Multi-tenant auth and isolation</td><td><span class="badge badge-green">Delivered</span></td></tr>
-        <tr><td>Enterprise integrations (HubSpot, Zendesk, Slack, ServiceNow)</td><td><span class="badge badge-green">Delivered</span></td></tr>
-        <tr><td>Feedback loop with auto-adjustment</td><td><span class="badge badge-green">Delivered</span></td></tr>
-        <tr><td>iPaaS webhook support (n8n, Zapier)</td><td><span class="badge badge-green">Delivered</span></td></tr>
-        <tr><td>WebSocket streaming</td><td><span class="badge badge-green">Delivered</span></td></tr>
-        <tr><td>Docker deployment with health checks</td><td><span class="badge badge-green">Delivered</span></td></tr>
-        <tr><td>CI/CD pipeline (lint, test, e2e, docker)</td><td><span class="badge badge-green">Delivered</span></td></tr>
-        <tr><td>Real-time agent monitoring dashboard</td><td><span class="badge badge-yellow">In Progress</span></td></tr>
-        <tr><td>Live agent handoff with context passing</td><td><span class="badge badge-blue">Planned</span></td></tr>
-        <tr><td>Analytics-driven prompt optimization</td><td><span class="badge badge-blue">Planned</span></td></tr>
+        <tr><th>Method</th><th>Description</th></tr>
+        <tr><td><strong>Docker</strong></td><td><code>docker compose up</code> &mdash; single-container deployment</td></tr>
+        <tr><td><strong>Bare metal</strong></td><td><code>uvicorn</code> behind nginx or Caddy</td></tr>
+        <tr><td><strong>CI/CD</strong></td><td>GitHub Actions &mdash; lint, 158+ unit tests, 33 E2E tests</td></tr>
+      </table>
+    </section>
+
+    <!-- Architecture -->
+    <section>
+      <h2>Architecture</h2>
+      <div class="diagram">
+        Web Console &bull; Twilio &bull; Amazon Connect &bull; REST API<br>
+        <span class="hl">&#8595;&#8595;&#8595;&#8595;</span><br>
+        <span class="g">FastAPI</span> &rarr; <span class="y">Agent Orchestrator</span> &rarr; <span>LLM (OpenAI / Claude / Gemini)</span><br>
+        <span style="opacity:0.4">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&#9500;&rarr; RAG (vector search + knowledge base)</span><br>
+        <span style="opacity:0.4">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&#9500;&rarr; Feedback Engine (CSAT auto-adjust)</span><br>
+        <span style="opacity:0.4">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&#9492;&rarr; Integrations (CRM, Slack, iPaaS)</span>
+      </div>
+      <p>All components are part of a single Python application &mdash; simple to deploy, simple to operate.</p>
+    </section>
+
+    <!-- Links -->
+    <section>
+      <h2>Project Links</h2>
+      <table>
+        <tr><td><strong>Repository</strong></td><td><a href="https://github.com/ShubhamRSY/voice-agents">github.com/ShubhamRSY/voice-agents</a></td></tr>
+        <tr><td><strong>License</strong></td><td>MIT</td></tr>
       </table>
     </section>
 
@@ -323,8 +248,7 @@ CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]</pre>
 
 <div class="footer">
   <div class="container">
-    Nexus AI Agent Platform — Version 2.0<br>
-    © 2026 Shubham RSY · For internal and partner use
+    Nexus AI Ops &mdash; one console for every conversation.
   </div>
 </div>
 
