@@ -161,9 +161,9 @@ Full architecture document: [`docs/technical/ARCHITECTURE.md`](docs/technical/AR
 | Category | Providers | Documentation |
 |---|---|---|
 | **LLMs** | OpenAI GPT-4o, Anthropic Claude 3.5, Google Gemini 2.0 | `config/agents.yaml` + UI |
-| **Telephony** | Twilio (PSTN + WhatsApp), Amazon Connect, generic SIP/CCaaS | Configure via UI or `.env` |
-| **CRMs** | Salesforce, Zendesk, ServiceNow | Configure via UI or `.env` |
-| **Notifications** | Slack | Configure via UI or `.env` |
+| **Telephony** | Twilio (PSTN + WhatsApp), Amazon Connect, generic SIP/CCaaS | [Twilio Setup](docs/integrations/twilio-setup.md) |
+| **CRMs** | Salesforce, Zendesk, ServiceNow | [CRM Setup](docs/integrations/crm-setup.md) |
+| **Notifications** | Slack | [Slack Setup](docs/integrations/slack-setup.md) |
 | **iPaaS** | n8n, Zapier — event-driven workflows | [n8n Template](docs/integrations/templates/n8n-workflow.json) · [Zapier Setup](docs/integrations/templates/zapier-setup.md) |
 
 All credentials stored in the encrypted Integrations Vault — never in config files or plain text.
@@ -539,6 +539,12 @@ Copy `config/environment/.env.example` → `config/environment/.env`:
 | `WEBHOOK_SIGNING_SECRET` | No | HMAC for n8n/Zapier events |
 
 ---
+
+### Integration Setup Guides
+
+- [Twilio Setup](docs/integrations/twilio-setup.md) — PSTN calls, WhatsApp, ngrok tunnel
+- [CRM Setup](docs/integrations/crm-setup.md) — Salesforce, Zendesk, ServiceNow
+- [Slack Setup](docs/integrations/slack-setup.md) — escalation notifications, bot setup
 
 ### Integration Templates
 
