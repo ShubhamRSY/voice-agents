@@ -1,7 +1,7 @@
 from pptx import Presentation
-from pptx.util import Inches, Pt, Emu
+from pptx.util import Inches, Pt
 from pptx.dml.color import RGBColor
-from pptx.enum.text import PP_ALIGN, MSO_ANCHOR
+from pptx.enum.text import PP_ALIGN
 from pptx.enum.shapes import MSO_SHAPE
 
 prs = Presentation()
@@ -29,9 +29,9 @@ def set_bg(slide, color=WHITE):
     fill.solid()
     fill.fore_color.rgb = color
 
-def add_rect(slide, l, t, w, h, color, radius=None):
+def add_rect(slide, left, t, w, h, color, radius=None):
     shape = slide.shapes.add_shape(
-        MSO_SHAPE.ROUNDED_RECTANGLE if radius else MSO_SHAPE.RECTANGLE, l, t, w, h)
+        MSO_SHAPE.ROUNDED_RECTANGLE if radius else MSO_SHAPE.RECTANGLE, left, t, w, h)
     shape.fill.solid()
     shape.fill.fore_color.rgb = color
     shape.line.fill.background()
@@ -39,8 +39,8 @@ def add_rect(slide, l, t, w, h, color, radius=None):
         shape.adjustments[0] = radius
     return shape
 
-def add_text(slide, l, t, w, h, text, size=18, color=DARK_TEXT, bold=False, align=PP_ALIGN.LEFT, font="Calibri"):
-    tb = slide.shapes.add_textbox(l, t, w, h)
+def add_text(slide, left, t, w, h, text, size=18, color=DARK_TEXT, bold=False, align=PP_ALIGN.LEFT, font="Calibri"):
+    tb = slide.shapes.add_textbox(left, t, w, h)
     tf = tb.text_frame
     tf.word_wrap = True
     p = tf.paragraphs[0]
@@ -52,8 +52,8 @@ def add_text(slide, l, t, w, h, text, size=18, color=DARK_TEXT, bold=False, alig
     p.alignment = align
     return tb
 
-def add_bullets(slide, l, t, w, h, items, size=16, color=DARK_TEXT, spacing=8, bold_first=False):
-    tb = slide.shapes.add_textbox(l, t, w, h)
+def add_bullets(slide, left, t, w, h, items, size=16, color=DARK_TEXT, spacing=8, bold_first=False):
+    tb = slide.shapes.add_textbox(left, t, w, h)
     tf = tb.text_frame
     tf.word_wrap = True
     for i, item in enumerate(items):
