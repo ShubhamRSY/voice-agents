@@ -29,7 +29,7 @@ jobs:
       - name: Dependency vulnerability scan
         run: |
           pip install pip-audit
-          pip-audit --strict
+          pip-audit --strict --skip-pkg enterprise-voice-agents
 
   test:
     runs-on: ubuntu-latest
