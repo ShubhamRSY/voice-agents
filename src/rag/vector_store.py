@@ -111,6 +111,7 @@ class VectorStore:
     def __init__(self, collection_name: str = "knowledge_base"):
         settings = get_settings()
 
+        self.embeddings: OpenAIEmbeddings | LocalHashEmbeddings
         if settings.openai_api_key:
             self.embeddings = OpenAIEmbeddings(
                 model=settings.embedding_model,

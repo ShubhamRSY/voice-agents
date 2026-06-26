@@ -293,7 +293,8 @@ class AgentOrchestrator:
 
         messages = result["messages"]
         response_msg = messages[-1]
-        response_text = response_msg.content if isinstance(response_msg, AIMessage) else str(response_msg)
+        raw = response_msg.content if isinstance(response_msg, AIMessage) else str(response_msg)
+        response_text = str(raw)
 
         if self.guardrails_enabled:
             output_check = check_output(response_text)

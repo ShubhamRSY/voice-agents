@@ -15,6 +15,7 @@ CONFIG_DIR = ROOT_DIR / "config"
 ENV_DIR = CONFIG_DIR / "environment"
 DATA_DIR = ROOT_DIR / "data"
 ENV_FILE = ENV_DIR / ".env"
+EVALUATION_DIR = CONFIG_DIR / "evaluation"
 
 
 def project_path(relative: str | Path) -> Path:
