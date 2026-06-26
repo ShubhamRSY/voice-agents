@@ -17,7 +17,7 @@ from src.api.kb_routes import router as kb_router
 from src.api.telephony_routes import router as telephony_router
 from src.api.integration_routes import router as integration_router_mod
 from src.api.ops_routes import router as ops_router
-from src.api.deps import _sessions, integration_router
+from src.api.deps import integration_router
 from src.auth import seed_demo_data
 from src.config import ROOT_DIR, get_settings, reload_settings
 from src.database import init_db

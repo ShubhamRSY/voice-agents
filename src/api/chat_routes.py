@@ -8,10 +8,9 @@ from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 from structlog import get_logger
 
-from src.config import load_agent_config, get_settings
+from src.config import load_agent_config
 from src.database import db
 from src.workflows.orchestrator import AgentOrchestrator
-from src.integrations.secrets_vault import get_secrets_vault
 from src.api.deps import (
     ChatRequest, ChatResponse, CopilotRequest, CSATRequest,
     _sessions, integration_router, require_auth, get_session,

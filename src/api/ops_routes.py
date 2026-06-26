@@ -239,7 +239,6 @@ async def receive_event(body: WebhookEventRequest) -> dict:
 @router.post("/demo/reset")
 async def reset_demo(ctx: Any = Depends(require_auth_dep)) -> dict:
     from src.auth import seed_demo_data
-    from src.database import get_connection
 
     tenant_id = ctx.tenant_id if ctx else "demo-acme"
 
@@ -248,10 +247,11 @@ async def reset_demo(ctx: Any = Depends(require_auth_dep)) -> dict:
         raise HTTPException(status_code=403, detail="Demo reset only available for demo tenant")
 
     with get_connection() as conn:
+        conn.execute("DELETE FROM csat_surveys WHERE session_id IN (SELECT id FROM sessions WHERE tenant_id = ?)", (tenant_id,))
         conn.execute("DELETE FROM messages WHERE session_id IN (SELECT id FROM sessions WHERE tenant_id = ?)", (tenant_id,))
         conn.execute("DELETE FROM sessions WHERE tenant_id = ?", (tenant_id,))
-        conn.execute("DELETE FROM csat_surveys WHERE tenant_id = ?", (tenant_id,))
         conn.execute("DELETE FROM audit_log WHERE tenant_id = ?", (tenant_id,))
+        conn.execute("DELETE FROM kb_versions WHERE article_id IN (SELECT id FROM knowledge_articles WHERE tenant_id = ?)", (tenant_id,))
         conn.execute("DELETE FROM knowledge_articles WHERE tenant_id = ?", (tenant_id,))
 
     seed_demo_data()

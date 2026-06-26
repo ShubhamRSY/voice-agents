@@ -200,8 +200,6 @@ class TestFeedback:
 
 class TestAnalytics:
     def test_analytics_dashboard(self, client):
-        from src.auth import AuthContext
-        from src.auth import require_auth
 
         res = client.get("/api/v1/analytics/dashboard?hours=24")
         # Auth may or may not be required depending on settings

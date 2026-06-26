@@ -6,8 +6,7 @@ from typing import Any
 from fastapi import APIRouter, Depends
 from structlog import get_logger
 
-from src.auth import AuthContext, create_jwt, get_auth_context, hash_password, require_auth, verify_password
-from src.config import get_settings
+from src.auth import AuthContext, create_jwt, hash_password, require_auth, verify_password
 from src.database import db
 from src.api.deps import LoginRequest, RegisterRequest
 

@@ -1,6 +1,5 @@
 """Shared dependencies, models, and singletons for API route modules."""
 
-import uuid
 from typing import Any
 
 from pydantic import BaseModel, Field

@@ -7,7 +7,6 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from structlog import get_logger
 
 from src.auth import require_auth, AuthContext
-from src.config import get_settings
 from src.database import db, get_connection
 from src.rag.ingestion import ingest_directory, ingest_file
 from src.rag.vector_store import VectorStore

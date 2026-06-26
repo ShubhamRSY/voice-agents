@@ -5,7 +5,7 @@ from typing import Any
 from fastapi import APIRouter, Request, HTTPException
 from structlog import get_logger
 
-from src.config import get_settings, reload_settings, Settings
+from src.config import get_settings, reload_settings
 from src.integrations.secrets_vault import CREDENTIAL_KEYS, WEBHOOK_EVENTS, get_secrets_vault
 from src.integrations.slack import SlackNotifier
 from src.integrations.zendesk import ZendeskClient
