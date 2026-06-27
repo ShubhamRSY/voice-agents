@@ -18,11 +18,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Install runtime deps first (layer caching)
 COPY pyproject.toml README.md ./
-COPY config/deps/requirements.txt config/deps/
 COPY src/ ./src/
 RUN pip install --upgrade pip setuptools wheel && \
-    pip install -r config/deps/requirements.txt && \
-    pip install -e .
+    pip install .
 
 # ==============================================================
 # Stage 2 — runtime image (minimal)
