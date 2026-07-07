@@ -86,6 +86,7 @@ def _get_user_version(conn) -> int:
 
 def _set_pg_user_version(conn, version: int) -> None:
     with conn.cursor() as cur:
+        cur.execute("CREATE TABLE IF NOT EXISTS _schema_version (version INTEGER NOT NULL)")
         cur.execute("DELETE FROM _schema_version")
         cur.execute("INSERT INTO _schema_version (version) VALUES (%s)", (version,))
     conn.commit()
