@@ -19,6 +19,7 @@ DB_PATH = DATA_DIR / "nexus.db"
 _SCHEMA_VERSION = 3
 _db_engine = None
 _pg_pool = None
+_db_initialized = False
 
 
 def _get_pg_pool():
@@ -41,10 +42,9 @@ def _get_pg_pool():
 
 
 @contextmanager
-def get_connection():
+def _get_connection_unchecked():
     settings = get_settings()
     if settings.database_url:
-        # Production PostgreSQL connection with pooling
         pool = _get_pg_pool()
         conn = pool.getconn()
         try:
@@ -54,15 +54,21 @@ def get_connection():
             pool.putconn(conn)
         return
 
-    # Development SQLite connection
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(str(DB_PATH))
     conn.row_factory = sqlite3.Row
-    conn.isolation_level = None  # explicit autocommit
+    conn.isolation_level = None
     conn.execute("PRAGMA journal_mode=WAL")
     conn.execute("PRAGMA foreign_keys=ON")
     yield conn
     conn.close()
+
+
+@contextmanager
+def get_connection():
+    _ensure_db()
+    with _get_connection_unchecked() as conn:
+        yield conn
 
 
 
@@ -444,7 +450,17 @@ def _run_pg_migrations(conn, current: int) -> None:
 
 
 def init_db() -> None:
-    with get_connection() as conn:
+    """Public entry point — also called from main.py lifespan."""
+    _ensure_db()
+
+
+def _ensure_db() -> None:
+    """One-shot lazy initialization — called before every connection."""
+    global _db_initialized
+    if _db_initialized:
+        return
+    _db_initialized = True
+    with _get_connection_unchecked() as conn:
         current = _get_user_version(conn)
         if current < _SCHEMA_VERSION:
             _run_migrations(conn, current)
@@ -464,7 +480,7 @@ def init_db() -> None:
 
 class Database:
     def __init__(self):
-        init_db()
+        pass
 
     def create_tenant(self, tenant_id: str, name: str, slug: str, settings: dict | None = None) -> dict:
         with get_connection() as conn:
