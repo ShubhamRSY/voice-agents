@@ -44,12 +44,8 @@ reload = False  # Use --reload flag for dev only
 
 def when_ready(server):
     """Log startup info."""
-    server.log.info(
-        "Gunicorn ready",
-        workers=workers,
-        worker_class=worker_class,
-        timeout=timeout,
-    )
+    server.log.info("Gunicorn ready: workers=%d  worker_class=%s  timeout=%d",
+                    workers, worker_class, timeout)
 
 
 def on_exit(server):
