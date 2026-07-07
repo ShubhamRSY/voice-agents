@@ -5,6 +5,7 @@ Supports database migrations and optional ChromaDB vector store backup.
 
 import json
 import sqlite3
+import threading
 import time
 from pathlib import Path
 import structlog
@@ -20,6 +21,7 @@ _SCHEMA_VERSION = 3
 _db_engine = None
 _pg_pool = None
 _db_initialized = False
+_db_lock = threading.Lock()
 
 
 def _get_pg_pool():
@@ -459,23 +461,26 @@ def _ensure_db() -> None:
     global _db_initialized
     if _db_initialized:
         return
-    _db_initialized = True
-    with _get_connection_unchecked() as conn:
-        current = _get_user_version(conn)
-        if current < _SCHEMA_VERSION:
-            _run_migrations(conn, current)
-        if _is_sqlite(conn):
-            conn.execute(
-                "INSERT OR IGNORE INTO tenants (id, name, slug, settings) VALUES (?, ?, ?, ?)",
-                ("default", "Default Tenant", "default", "{}"),
-            )
-        else:
-            with conn.cursor() as cur:
-                cur.execute(
-                    "INSERT INTO tenants (id, name, slug, settings) VALUES (%s, %s, %s, %s) ON CONFLICT DO NOTHING",
+    with _db_lock:
+        if _db_initialized:
+            return
+        with _get_connection_unchecked() as conn:
+            current = _get_user_version(conn)
+            if current < _SCHEMA_VERSION:
+                _run_migrations(conn, current)
+            if _is_sqlite(conn):
+                conn.execute(
+                    "INSERT OR IGNORE INTO tenants (id, name, slug, settings) VALUES (?, ?, ?, ?)",
                     ("default", "Default Tenant", "default", "{}"),
                 )
-            conn.commit()
+            else:
+                with conn.cursor() as cur:
+                    cur.execute(
+                        "INSERT INTO tenants (id, name, slug, settings) VALUES (%s, %s, %s, %s) ON CONFLICT DO NOTHING",
+                        ("default", "Default Tenant", "default", "{}"),
+                    )
+                conn.commit()
+        _db_initialized = True
 
 
 class Database:

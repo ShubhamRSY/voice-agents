@@ -68,20 +68,25 @@ jobs:
           DATABASE_URL: postgresql://nexus:nexus@localhost:5432/nexus
         run: |
           python -c "
-          from src.config import get_settings
-          s = get_settings()
-          assert 'postgresql' in s.database_url, f'Expected postgresql URL, got {s.database_url}'
-          from src.database import init_db, _get_pg_pool
-          init_db()
-          pool = _get_pg_pool()
-          conn = pool.getconn()
-          with conn.cursor() as cur:
-              cur.execute('SELECT version FROM _schema_version')
-              row = cur.fetchone()
-              assert row is not None, 'Schema version not set'
-              assert row[0] >= 3, f'Expected schema version >= 3, got {row[0]}'
-          pool.putconn(conn)
-          print('PostgreSQL connection OK, schema version', row[0])
+          import sys, traceback
+          try:
+              from src.config import get_settings
+              s = get_settings()
+              assert 'postgresql' in s.database_url, f'Expected postgresql URL, got {s.database_url}'
+              from src.database import init_db, _get_pg_pool, _SCHEMA_VERSION
+              init_db()
+              pool = _get_pg_pool()
+              conn = pool.getconn()
+              with conn.cursor() as cur:
+                  cur.execute('SELECT version FROM _schema_version')
+                  row = cur.fetchone()
+                  assert row is not None, 'Schema version not set'
+                  assert row[0] >= _SCHEMA_VERSION, f'Expected schema version >= {_SCHEMA_VERSION}, got {row[0]}'
+              pool.putconn(conn)
+              print('PostgreSQL connection OK, schema version', row[0])
+          except Exception:
+              traceback.print_exc()
+              sys.exit(1)
           "
       - name: Run LLM E2E (if API keys set)
         env:
