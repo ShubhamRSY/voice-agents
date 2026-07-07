@@ -36,9 +36,10 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-# Install only wget for healthcheck; ca-certificates already present
+# Install runtime libs: wget for healthcheck, libgomp1 for onnxruntime (chromadb)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     wget \
+    libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy installed packages from builder (match Python 3.12 path)
