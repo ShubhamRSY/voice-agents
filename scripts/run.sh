@@ -5,7 +5,7 @@ cd "$ROOT"
 if [ ! -d ".venv" ]; then
   echo "ERROR: .venv not found. Run:"
   echo "  python3 -m venv .venv && source .venv/bin/activate"
-  echo "  pip install -r config/deps/requirements.txt && pip install -e \".[dev]\""
+  echo "  pip install -e \".[dev]\""
   exit 1
 fi
 
@@ -32,11 +32,11 @@ echo "=========================================="
 echo "  Nexus Voice Agents Platform"
 echo "=========================================="
 echo ""
-echo "  Chat UI:  http://127.0.0.1:$PORT/"
-echo "  API docs: http://127.0.0.1:$PORT/docs"
+echo "  Chat UI:   http://127.0.0.1:$PORT/"
+echo "  API docs:  http://127.0.0.1:$PORT/docs"
+echo "  Health:    http://127.0.0.1:$PORT/api/v1/health"
 echo ""
-echo "  DO NOT CLOSE THIS WINDOW"
-echo "  Press Ctrl+C to stop"
+echo "  Server is running — press Ctrl+C to stop"
 echo "=========================================="
 echo ""
 

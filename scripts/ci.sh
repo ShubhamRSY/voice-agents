@@ -17,7 +17,6 @@ source .venv/bin/activate
 
 pip install --upgrade pip -q
 pip install -e ".[dev]" -q
-pip install ruff mypy pytest-timeout -q
 
 mkdir -p tests/reports
 
@@ -27,7 +26,7 @@ ruff check src/ tests/ scripts/
 
 echo ""
 echo ">> [2/5] Type check with mypy"
-mypy src/ --ignore-missing-imports --allow-untyped-decorators || true
+mypy src/ || true
 
 echo ""
 echo ">> [3/5] Unit & integration tests"

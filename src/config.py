@@ -68,6 +68,23 @@ class Settings(BaseSettings):
     sentry_dsn: str = ""
     otel_endpoint: str = ""
 
+    # HashiCorp Vault (optional) — overrides env-based secrets
+    vault_addr: str = ""
+    vault_token: str = ""
+    vault_path: str = "secret/data/nexus"
+
+    # Logging sink: "stdout" (default), "file", or "loki"
+    log_sink: str = "stdout"
+    log_file: str = "logs/nexus.log"
+    # Loki endpoint for log aggregation (e.g., http://loki:3100/loki/api/v1/push)
+    loki_url: str = ""
+
+    # Backup config
+    backup_s3_bucket: str = ""
+    backup_s3_prefix: str = "nexus-backups"
+    backup_enabled: bool = False
+    backup_cron: str = "0 3 * * *"  # daily at 3am
+
     app_host: str = "0.0.0.0"
     app_port: int = 8001
     log_level: str = "INFO"
@@ -80,11 +97,33 @@ def get_settings() -> Settings:
     return _merge_vault_credentials(settings)
 
 
+def _fetch_hashivault_secrets(settings: Settings) -> dict[str, str]:
+    """Optionally fetch secrets from HashiCorp Vault KV v2 engine."""
+    if not settings.vault_addr or not settings.vault_token:
+        return {}
+    try:
+        import hvac
+        client = hvac.Client(url=settings.vault_addr, token=settings.vault_token)
+        secret = client.secrets.kv.v2.read_secret_version(path=settings.vault_path)
+        return secret.get("data", {}).get("data", {})
+    except ImportError:
+        logger.warning("hvac_not_installed_vault_secrets_skipped")
+        return {}
+    except Exception as exc:
+        logger.warning("vault_fetch_failed", error=str(exc))
+        return {}
+
+
 def _merge_vault_credentials(settings: Settings) -> Settings:
-    """Overlay encrypted vault credentials onto environment settings."""
+    """Overlay encrypted vault credentials onto environment settings.
+
+    Order of precedence (later wins):
+      1. .env file
+      2. Fernet encrypted vault (local)
+      3. HashiCorp Vault (remote, if configured)
+    """
     try:
         from src.integrations.secrets_vault import CREDENTIAL_KEYS, get_secrets_vault
-
         vault_creds = get_secrets_vault().get_credentials()
         for key in CREDENTIAL_KEYS:
             value = vault_creds.get(key)
@@ -92,6 +131,14 @@ def _merge_vault_credentials(settings: Settings) -> Settings:
                 setattr(settings, key, value)
     except Exception as exc:
         logger.warning("vault_merge_failed", error=str(exc))
+
+    # HashiCorp Vault overlay (takes precedence)
+    hc_vault = _fetch_hashivault_secrets(settings)
+    for key, value in hc_vault.items():
+        if value and hasattr(settings, key):
+            setattr(settings, key, value)
+            logger.debug("vault_secret_loaded", key=key)
+
     return settings
 
 

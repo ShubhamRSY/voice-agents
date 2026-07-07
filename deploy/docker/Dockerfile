@@ -62,12 +62,8 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://127.0.0.1:8000/api/v1/health || exit 1
 
+COPY deploy/docker/gunicorn.conf.py /app/gunicorn.conf.py
+
 CMD ["gunicorn", \
-     "-w", "4", \
-     "-k", "uvicorn.workers.UvicornWorker", \
      "src.main:app", \
-     "--bind", "0.0.0.0:8000", \
-     "--max-requests", "10000", \
-     "--max-requests-jitter", "1000", \
-     "--timeout", "120", \
-     "--graceful-timeout", "30"]
+     "--config", "/app/gunicorn.conf.py"]

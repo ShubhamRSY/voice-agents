@@ -1,0 +1,46 @@
+# Caddy reverse proxy — terminates TLS and routes to nexus
+# Uses {$DOMAIN} for the server name. Set DOMAIN=:80 for local dev.
+# In production, set DOMAIN=nexus.example.com for auto-HTTPS.
+
+{$DOMAIN} {
+    # Security headers
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        X-XSS-Protection "1; mode=block"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Permissions-Policy "camera=(), microphone=(), geolocation=()"
+    }
+
+    # Rate limiting at the edge
+    rate_limit {
+        zone dynamic {
+            key {remote_host}
+            events 120
+            window 1m
+        }
+    }
+
+    # Proxy to nexus backend
+    reverse_proxy {$NEXUS_URL} {
+        # Strip /api prefix if needed
+        header_up X-Forwarded-Host {host}
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+    }
+
+    # WebSocket support for streaming
+    @websocket {
+        header Connection *Upgrade*
+        header Upgrade websocket
+    }
+    reverse_proxy @websocket {$NEXUS_URL}
+
+    # Log in JSON format for ingestion by Loki/ELK
+    log {
+        output file /data/caddy-access.log
+        format json
+    }
+}

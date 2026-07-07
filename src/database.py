@@ -18,17 +18,40 @@ DB_PATH = DATA_DIR / "nexus.db"
 
 _SCHEMA_VERSION = 3
 _db_engine = None
+_pg_pool = None
+
+
+def _get_pg_pool():
+    """Lazy-init connection pool for PostgreSQL."""
+    global _pg_pool
+    if _pg_pool is None:
+        try:
+            import psycopg2.pool
+            settings = get_settings()
+            _pg_pool = psycopg2.pool.ThreadedConnectionPool(
+                minconn=2,
+                maxconn=10,
+                dsn=settings.database_url,
+            )
+            logger.info("postgres_pool_initialized", minconn=2, maxconn=10)
+        except Exception as exc:
+            logger.error("postgres_pool_init_failed", error=str(exc))
+            raise
+    return _pg_pool
 
 
 @contextmanager
-def get_connection() -> sqlite3.Connection:
+def get_connection():
     settings = get_settings()
     if settings.database_url:
-        # Production PostgreSQL connection (requires psycopg2)
-        import psycopg2
-        conn = psycopg2.connect(settings.database_url)
-        yield conn
-        conn.close()
+        # Production PostgreSQL connection with pooling
+        pool = _get_pg_pool()
+        conn = pool.getconn()
+        try:
+            conn.autocommit = True
+            yield conn
+        finally:
+            pool.putconn(conn)
         return
 
     # Development SQLite connection

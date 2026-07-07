@@ -8,7 +8,7 @@ One orchestrator routing chat, copilot, and voice conversations — with RAG, mu
 [![CI](https://github.com/ShubhamRSY/voice-agents/actions/workflows/ci.yml/badge.svg)](https://github.com/ShubhamRSY/voice-agents/actions/workflows/ci.yml)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-95%2B%20unit%20passing-brightgreen.svg)](tests/)
+[![Tests](https://img.shields.io/badge/tests-109%20unit%20passing-brightgreen.svg)](tests/)
 
 </div>
 
@@ -19,13 +19,12 @@ One orchestrator routing chat, copilot, and voice conversations — with RAG, mu
 - [What Is Nexus?](#what-is-nexus)
 - [Recent Changes](#recent-changes)
 - [Prerequisites](#prerequisites)
-- [Installation](#installation)
 - [Quick Start](#quick-start)
+- [Production Deployment](#production-deployment)
 - [Architecture](#architecture)
 - [Features](#features)
 - [API Overview](#api-overview)
 - [Testing](#testing)
-- [Deployment](#deployment)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -43,22 +42,28 @@ Customer support teams lose context switching between channels — chat, phone, 
 | **Copilot** | Agent-assist — paste a transcript, get an AI-suggested reply |
 | **Voice** | PSTN calls via Twilio, Amazon Connect, or any SIP/CCaaS. Live STT, AI TTS. |
 
-> **No API key required.** Without `OPENAI_API_KEY`, Nexus falls back to a mock LLM — the console, voice simulator, smoke tests, and all 95+ unit tests work immediately.
+> **No API key required.** Without `OPENAI_API_KEY`, Nexus falls back to a mock LLM — the console, voice simulator, smoke tests, and all 109+ unit tests work immediately.
 
 ---
 
 ## Recent Changes
 
+### v2.0.0 — Production Hardening (June 2026)
+
 | Change | Description |
 |--------|-------------|
-| **Routes refactored** | Monolithic `routes.py` split into domain modules: `auth_routes`, `chat_routes`, `kb_routes`, `telephony_routes`, `integration_routes`, `ops_routes` |
-| **SSE streaming endpoint** | New `GET /api/v1/chat/sse` for token-by-token streaming via Server-Sent Events |
-| **Dockerfile optimized** | Multi-stage build, Python 3.12-slim, gunicorn with uvicorn workers, `wget` healthcheck, non-root user |
-| **CI hardened** | Added `pip-audit --strict` dependency vulnerability scan; strict mypy (no `|| true`) |
-| **Enhanced API docs** | All Pydantic models now have `description` and `examples` — visible in `/docs` |
-| **Config cleanup** | Removed unused path constants from `src/config.py` |
-| **Database fix** | `isolation_level=None` ensures proper autocommit across reconnects |
-| **Test expansion** | 6 new streaming tests (SSE + WebSocket); 95+ unit tests passing |
+| **HTTPS/TLS** | Caddy reverse proxy with auto-HTTPS (Let's Encrypt), security headers, edge rate limiting |
+| **PostgreSQL + Redis** | Docker Compose with Postgres 16 (connection pooling), Redis 7, health checks, persistent volumes |
+| **Rate limiting** | Redis-backed sliding window with in-memory fallback, per-endpoint-group limits |
+| **CI with PostgreSQL** | CI runs tests against both SQLite and PostgreSQL; conditional LLM E2E tests |
+| **Zero-downtime deploys** | Gunicorn with preload, max-requests, graceful SIGHUP reload, config file |
+| **Structured logging** | File sink with rotation, Loki push support, JSON output for production |
+| **Secrets management** | HashiCorp Vault integration (optional, via `hvac`), layered credential resolution |
+| **Automated backups** | Backup script for PostgreSQL + ChromaDB with S3 upload, retention, cron scheduling |
+| **Load testing config** | 15 benchmark scenarios, concurrency profiles, performance budgets in `benchmarks.json` |
+| **Dependencies pinned** | All 28 runtime deps pinned to exact versions; ruff + mypy in dev group |
+| **Dockerfile optimized** | Multi-stage build -> gunicorn config, COPY safety, non-root user |
+| **109+ tests** | Full coverage: unit, integration, E2E, non-functional, security, concurrency |
 
 ---
 
@@ -68,11 +73,11 @@ Customer support teams lose context switching between channels — chat, phone, 
 - **pip** (bundled with Python)
 - **git**
 - *(Optional)* An [OpenAI](https://platform.openai.com/api-keys), [Anthropic](https://console.anthropic.com/), or [Google Gemini](https://ai.google.dev/) API key for production LLM access
-- *(Optional)* [Docker](https://www.docker.com/) for containerized deployment
+- *(Optional)* [Docker](https://www.docker.com/) + [Docker Compose](https://docs.docker.com/compose/) for containerized deployment
 
 ---
 
-## Installation
+## Quick Start
 
 ```bash
 # 1. Clone the repository
@@ -88,14 +93,8 @@ pip install -e ".[dev]"
 
 # 4. Copy the environment template (no edits needed to start)
 cp config/environment/.env.example config/environment/.env
-```
 
----
-
-## Quick Start
-
-```bash
-# Start the server
+# 5. Start the server
 uvicorn src.main:app --reload --port 8001
 ```
 
@@ -116,10 +115,58 @@ curl -s http://127.0.0.1:8001/api/v1/chat/sse?message=Hello
 wscat -c ws://127.0.0.1:8001/api/v1/chat/stream
 ```
 
-**Health check:**
+---
+
+## Production Deployment
+
+### Docker Compose (recommended)
 
 ```bash
-curl http://127.0.0.1:8001/api/v1/health
+# Full stack with TLS, Postgres, Redis
+docker compose -f deploy/docker/docker-compose.yml up
+
+# Include automated backups
+docker compose -f deploy/docker/docker-compose.yml --profile backup up
+```
+
+This starts:
+- **Caddy** — TLS termination, rate limiting, security headers, JSON access logs
+- **PostgreSQL 16** — persistent volume, health checks, auto-extensions
+- **Redis 7** — persistent volume, caching + task queue
+- **Nexus** — gunicorn with 2-4x CPU workers, max-requests, graceful reload
+- **Backup** (profile) — daily PostgreSQL + ChromaDB backup to local or S3
+
+### Environment Configuration
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `DOMAIN` | No | `:80` | Domain for auto-HTTPS (set to `nexus.example.com` in prod) |
+| `DATABASE_URL` | No | SQLite | `postgresql://user:pass@host:5432/db` |
+| `REDIS_URL` | No | in-memory | `redis://host:6379/0` |
+| `OPENAI_API_KEY` | No | mock | LLM provider key |
+| `SENTRY_DSN` | No | — | Error tracking |
+| `OTEL_ENDPOINT` | No | — | OpenTelemetry collector |
+| `VAULT_ADDR` | No | — | HashiCorp Vault URL |
+| `CORS_ORIGINS` | No | `*` | Set to your domain in production |
+| `BACKUP_S3_BUCKET` | No | — | S3 bucket for offsite backups |
+
+Full reference: [`config/environment/.env.example`](config/environment/.env.example)
+
+### Bare Metal
+
+```bash
+# Install production dependencies
+pip install -e "."
+
+# Set environment variables (see .env.example)
+export DATABASE_URL=postgresql://...
+export REDIS_URL=redis://...
+
+# Start with gunicorn (zero-downtime)
+gunicorn src.main:app --config deploy/docker/gunicorn.conf.py
+
+# Graceful reload (zero-downtime)
+kill -HUP <gunicorn-pid>
 ```
 
 ---
@@ -127,17 +174,39 @@ curl http://127.0.0.1:8001/api/v1/health
 ## Architecture
 
 ```
-User Message → REST API → Orchestrator
-  ├→ Session Manager (create/load session)
-  ├→ RAG Engine (retrieve context + citations)
-  ├→ Prompt Builder (system prompt + history + context)
-  ├→ LLM Provider (streaming SSE/WebSocket response)
-  └→ Response → Console
+                          ┌─────────────┐
+                          │   Caddy     │  ← TLS termination, rate limiting
+                          │  (reverse   │
+                          │   proxy)    │
+                          └──────┬──────┘
+                                 │
+                          ┌──────▼──────┐
+                          │   FastAPI   │  ← Auth, CORS, tenant, rate limit middleware
+                          │   (Nexus)   │
+                          └──┬───┬───┬──┘
+                             │   │   │
+              ┌──────────────┤   │   ├──────────────┐
+              │              │   │   │              │
+       ┌──────▼──────┐ ┌────▼───▼───▼────┐ ┌───────▼──────┐
+       │   Chat      │ │   Orchestrator  │ │   Voice      │
+       │   Copilot   │ │  (LangGraph)    │ │  (Twilio)    │
+       │   SSE/WS    │ │  RAG + Guardrails│ │  STT/TTS     │
+       └──────┬──────┘ └────┬───┬───┬────┘ └──────┬───────┘
+              │             │   │   │              │
+              └─────────────┘   │   └──────────────┘
+                                │
+                    ┌───────────┼───────────┐
+                    │           │           │
+              ┌─────▼────┐ ┌───▼───┐ ┌─────▼────┐
+              │ Postgres │ │ Redis │ │ ChromaDB │
+              │ (SQLite  │ │(cache+│ │ (vector  │
+              │   dev)   │ │queue) │ │  store)  │
+              └──────────┘ └───────┘ └──────────┘
 ```
 
-Nexus follows a layered design: domain routers (`auth_routes`, `chat_routes`, `kb_routes`, `telephony_routes`, `integration_routes`, `ops_routes`) handle channel-specific logic, the orchestrator manages session state and prompt construction, services provide RAG and feedback, and a provider layer abstracts over OpenAI, Anthropic, and Gemini models.
+Nexus follows a layered design: domain routers handle channel-specific logic, the orchestrator manages session state and prompt construction, services provide RAG and feedback, and a provider layer abstracts over OpenAI, Anthropic, and Gemini models.
 
-Full architecture and data flow diagrams → [docs/overview.md](docs/overview.md#architecture).
+Full architecture → [docs/overview.md](docs/overview.md#architecture).
 
 ---
 
@@ -151,8 +220,9 @@ Full architecture and data flow diagrams → [docs/overview.md](docs/overview.md
 - **Feedback engine** — CSAT ratings dynamically tune agent temperature and RAG thresholds
 - **Encrypted vault** — AES-256-GCM for API keys and integration credentials at rest
 - **Session management** — history sidebar, rename, new/clear session
-- **iPaaS webhooks** — lifecycle events (session.created, message.completed, feedback.submitted) for n8n/Zapier
+- **iPaaS webhooks** — lifecycle events for n8n/Zapier
 - **Dark mode UI** — polished frontend with animations, typing indicator, streaming cursor
+- **Production infrastructure** — TLS termination, PostgreSQL, Redis, Sentry, OpenTelemetry, structured logging, automated backups
 
 ---
 
@@ -176,7 +246,9 @@ Full architecture and data flow diagrams → [docs/overview.md](docs/overview.md
 | GET | `/api/v1/llm/config` | LLM configuration overview |
 | GET | `/api/v1/health` | Health check (no auth) |
 | GET | `/api/v1/metrics` | Prometheus metrics |
-| GET | `/api/v1/feedback/{agent_id}/report` | Agent feedback report |
+| GET | `/api/v1/observability/health` | Detailed observability status |
+| GET | `/api/v1/analytics/dashboard` | Conversation analytics dashboard |
+| POST | `/api/v1/evaluation/run` | Run agent evaluation suite |
 | POST | `/api/v1/demo/reset` | Reset demo data |
 | POST | `/api/v1/events` | Receive external events |
 
@@ -187,25 +259,20 @@ Full reference at `/docs` when the server is running.
 ## Testing
 
 ```bash
-# Unit tests
-pytest tests/ --timeout=60 -v
+# Unit & integration tests (109 tests)
+pytest tests/ --ignore=tests/e2e --timeout=60 -v
 
-# Lint + type check + security audit
+# E2E tests (requires running server)
+python -m uvicorn src.main:app --port 8001 &
+pytest tests/e2e/ -v --reruns 2
+
+# Full CI pipeline locally
+bash scripts/ci.sh
+
+# Lint + type check
 ruff check src/ scripts/
-mypy src/ --ignore-missing-imports
-pip install pip-audit && pip-audit --strict
+mypy src/
 ```
-
----
-
-## Deployment
-
-| Method | Command |
-|--------|---------|
-| **Docker** | `docker compose -f deploy/docker/docker-compose.yml up` |
-| **Bare metal** | `uvicorn src.main:app --host 0.0.0.0 --port 8001` |
-| **Production (multi-worker)** | `gunicorn -w 4 -k uvicorn.workers.UvicornWorker src.main:app --bind 0.0.0.0:8001 --timeout 120 --graceful-timeout 30` |
-| **CI/CD** | GitHub Actions — lint (ruff + mypy + pip-audit), test, e2e, docker build |
 
 ---
 

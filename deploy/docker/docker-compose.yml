@@ -1,21 +1,133 @@
 version: "3.9"
 
+volumes:
+  postgres_data:
+  redis_data:
+  caddy_data:
+  caddy_config:
+
+networks:
+  nexus:
+    driver: bridge
+
 services:
+  # ── TLS Termination ──────────────────────────────────────────
+  # Caddy automatically provisions Let's Encrypt certificates.
+  # Set DOMAIN in .env for production, or use ":80" for local dev.
+  caddy:
+    image: caddy:2-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/docker/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    environment:
+      DOMAIN: ${DOMAIN:-:80}
+      NEXUS_URL: http://nexus:8000
+    networks:
+      - nexus
+    depends_on:
+      nexus:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ── Database ─────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: nexus
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-nexus}
+      POSTGRES_DB: nexus
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./deploy/docker/init-db.sh:/docker-entrypoint-initdb.d/init-db.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nexus"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - nexus
+    restart: unless-stopped
+
+  # ── Cache & Task Queue ───────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - nexus
+    restart: unless-stopped
+
+  # ── Application ──────────────────────────────────────────────
   nexus:
     build:
-      context: .
+      context: ../..
       dockerfile: deploy/docker/Dockerfile
-    ports:
-      - "8000:8000"
+    expose:
+      - "8000"
     env_file:
-      - config/environment/.env
+      - ../../config/environment/.env
     volumes:
-      - ./data:/app/data
-      - ./config:/app/config
+      - ../../data:/app/data
+      - ../../config:/app/config
+    environment:
+      DATABASE_URL: postgresql://nexus:${POSTGRES_PASSWORD:-nexus}@postgres:5432/nexus
+      REDIS_URL: redis://redis:6379/0
+      CORS_ORIGINS: ${CORS_ORIGINS:-https://your-domain.com}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/v1/health')"]
       interval: 30s
       timeout: 5s
       retries: 3
       start_period: 15s
+    networks:
+      - nexus
+    restart: unless-stopped
+
+  # ── Automated Backup ────────────────────────────────────────
+  backup:
+    image: alpine:3.19
+    volumes:
+      - ../../data:/app/data
+      - ../../config:/app/config
+      - ../../backups:/app/backups
+      - ../../scripts:/app/scripts:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      BACKUP_DIR: /app/backups
+      CHROMA_PERSIST_DIR: /app/data/chroma
+      DATABASE_URL: postgresql://nexus:${POSTGRES_PASSWORD:-nexus}@postgres:5432/nexus
+      BACKUP_RETENTION_DAYS: 30
+    entrypoint: |
+      sh -c "
+        apk add --no-cache postgresql-client aws-cli >/dev/null 2>&1
+        echo 'Backup container ready — waiting for schedule...'
+        echo '${BACKUP_CRON:-0 3 * * *} /app/scripts/backup.sh >> /app/backups/backup.log 2>&1' > /tmp/crontab
+        crontab /tmp/crontab
+        crond -f
+      "
+    depends_on:
+      postgres:
+        condition: service_healthy
+    profiles:
+      - backup
+    networks:
+      - nexus
     restart: unless-stopped
