@@ -17,6 +17,7 @@ One orchestrator routing chat, copilot, and voice conversations — with RAG, mu
 ## Table of Contents
 
 - [What Is Nexus?](#what-is-nexus)
+- [Nexus Concepts](#nexus-concepts)
 - [Recent Changes](#recent-changes)
 - [Prerequisites](#prerequisites)
 - [Quick Start](#quick-start)
@@ -26,6 +27,7 @@ One orchestrator routing chat, copilot, and voice conversations — with RAG, mu
 - [API Overview](#api-overview)
 - [Testing](#testing)
 - [Contributing](#contributing)
+- [Keeping `main` Safe](#keeping-main-safe)
 - [License](#license)
 
 ---
@@ -43,6 +45,30 @@ Customer support teams lose context switching between channels — chat, phone, 
 | **Voice** | PSTN calls via Twilio, Amazon Connect, or any SIP/CCaaS. Live STT, AI TTS. |
 
 > **No API key required.** Without `OPENAI_API_KEY`, Nexus falls back to a mock LLM — the console, voice simulator, smoke tests, and all 109+ unit tests work immediately.
+
+---
+
+## Nexus Concepts
+
+Nexus is organized around a small set of primitives so you can reason about the system (and extend it safely) without needing to learn every file at once.
+
+**Core primitives**
+
+- **Orchestrator**: The brain of the runtime. It receives a user event (chat message, copilot transcript, or voice turn), loads session context, retrieves relevant knowledge, selects an agent policy, and streams back tokens.
+- **Agents**: Configured behaviors (prompts + tools + routing rules). An agent can be specialized (billing, refunds, troubleshooting) or general-purpose, and can be swapped per request.
+- **Channels**: Transport + UX mode. Channel adapters normalize inputs/outputs so the orchestrator sees a consistent event shape while each channel keeps its own streaming protocol and pacing.
+  - **Chat**: JSON response or streaming via SSE/WS
+  - **Copilot**: transcript → suggested reply (agent-assist)
+  - **Voice**: streaming STT → LLM → TTS (telephony provider integration)
+- **Knowledge base (RAG)**: A document store + embeddings + retrieval step that grounds responses in your internal docs. Nexus attaches citations so answers can be audited.
+- **Guardrails**: Safety and reliability layers around generation: rate limits, auth, tool allowlists, prompt constraints, and (optionally) secrets resolution via Vault.
+- **State & storage**: Session history and metadata stored in SQLite (dev) or Postgres (prod), with Redis used for caching and queueing.
+
+**What “Nexus” means in practice**
+
+- **One runtime for all channels**: you do not maintain separate “chat bot” and “voice bot” codepaths with divergent prompt logic.
+- **Consistent observability**: streaming, errors, and latency can be traced per session across channels.
+- **Safe extension points**: most customization should happen by adding/adjusting agents, tools, and KB content rather than editing request plumbing.
 
 ---
 
@@ -293,6 +319,36 @@ mypy src/
 5. Submit a pull request
 
 All contributions — features, bug fixes, docs, tests — are welcome.
+
+---
+
+## Keeping `main` Safe
+
+If you’re collaborating (or deploying from this repo), these practices help prevent accidental breakage and secret leaks.
+
+**Branch protection (recommended)**
+
+- Protect `main` and require PRs (no direct pushes).
+- Require status checks to pass (CI / tests / lint / typecheck).
+- Require at least 1 review approval (2 for risky areas like auth, billing, deployments).
+- Enable “Require branches to be up to date before merging”.
+- Prefer “Squash and merge” to keep history readable.
+
+**CI as the gate**
+
+- Keep `scripts/ci.sh` (or the CI workflow) as the single source of truth for what must pass before merge.
+- Add new checks there first (then mark them required in branch protection).
+
+**Secrets hygiene**
+
+- Never commit `.env` files. Use `config/environment/.env.example` as the source of truth.
+- Treat production credentials as external (Vault, secret manager, or CI secrets) — not repo files.
+- If you suspect a key leaked: revoke/rotate immediately, then purge from git history (do not rely on “delete the file”).
+
+**Safer local development**
+
+- Use the mock LLM by default (no `OPENAI_API_KEY`) when iterating on routing and UI.
+- Develop features behind config flags when possible, so `main` remains deployable.
 
 ---
 
