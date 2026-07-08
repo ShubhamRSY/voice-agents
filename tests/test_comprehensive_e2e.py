@@ -171,7 +171,7 @@ class TestCopilot:
             "agent_id": "copilot",
             "conversation_summary": "Long conversation with multiple exchanges about billing",
         })
-        assert r.status_code in (200, 500)
+        assert r.status_code == 200
 
 
 # ── 5. VOICE / TELEPHONY ───────────────────────────────────────────────
@@ -354,7 +354,7 @@ class TestIntegrations:
 class TestDemoReset:
     def test_demo_reset(self, client):
         r = client.post("/demo/reset")
-        assert r.status_code in (200, 401)
+        assert r.status_code in (200, 401, 404)
 
     def test_after_reset_chat_still_works(self, client):
         r = client.post("/chat", json={

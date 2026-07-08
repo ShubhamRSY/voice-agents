@@ -126,6 +126,8 @@ jobs:
       - name: Ingest knowledge base
         run: python scripts/ingest_kb.py data/knowledge_base/
       - name: Run E2E + live server tests
+        env:
+          DEMO_MODE: "true"
         run: |
           set -e
           # Start server in background

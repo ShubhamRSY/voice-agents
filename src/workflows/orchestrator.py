@@ -83,7 +83,7 @@ class AgentOrchestrator:
 
         if any(k in lower for k in ["summarize", "summary", "recap", "handoff"]):
             if "summarize_conversation" in TOOL_REGISTRY:
-                TOOL_REGISTRY["summarize_conversation"].invoke(summary)
+                await TOOL_REGISTRY["summarize_conversation"].ainvoke({"transcript": summary})
                 tool_calls.append({"name": "summarize_conversation", "args": {"transcript": summary[:200]}})
             lines = [ln.strip() for ln in summary.split(".") if ln.strip()][:3]
             response_text = (
@@ -107,7 +107,7 @@ class AgentOrchestrator:
         else:
             kb_hit = best_answer(user_input) or best_answer(summary)
             if kb_hit and "search_knowledge_base" in TOOL_REGISTRY:
-                TOOL_REGISTRY["search_knowledge_base"].invoke(user_input)
+                TOOL_REGISTRY["search_knowledge_base"].invoke({"query": user_input})
                 tool_calls.append({"name": "search_knowledge_base", "args": {"query": user_input}})
             tool_calls.append({"name": "draft_response", "args": {"context": summary}})
 
@@ -195,7 +195,7 @@ class AgentOrchestrator:
         else:
             kb_hit = best_answer(user_input)
             if kb_hit and "search_knowledge_base" in TOOL_REGISTRY:
-                TOOL_REGISTRY["search_knowledge_base"].invoke(user_input)
+                TOOL_REGISTRY["search_knowledge_base"].invoke({"query": user_input})
                 tool_calls.append({"name": "search_knowledge_base", "args": {"query": user_input}})
                 response_text = kb_hit
                 if channel == "voice":
