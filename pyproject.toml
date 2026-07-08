@@ -133,8 +133,9 @@ disable_error_code = ["attr-defined"]
 module = [
     "src.telephony.twilio_handler",
     "src.telephony.amazon_connect_handler",
+    "src.telephony.security",
 ]
-disable_error_code = ["arg-type", "union-attr"]
+disable_error_code = ["arg-type", "union-attr", "import-untyped"]
 
 [[tool.mypy.overrides]]
 module = [
