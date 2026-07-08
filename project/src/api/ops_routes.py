@@ -51,16 +51,25 @@ async def observability_health() -> dict:
     snap = collector.snapshot()
     uptime = snap["uptime_seconds"]
     gauge = active_gauge.snapshot()
+    latency = snap["histograms"].get("request_latency_ms", {})
+    counters = snap["counters"]
     return {
         "status": "healthy",
         "uptime_seconds": uptime,
-        "requests_processed": snap["counters"].get("requests_total", 0),
-        "errors": snap["counters"].get("errors_total", 0),
+        "requests_processed": counters.get("requests_total", 0),
+        "errors": counters.get("errors_total", 0),
+        "http_5xx": counters.get("http_5xx_total", 0),
+        "http_4xx": counters.get("http_4xx_total", 0),
+        "auth_failures": counters.get("auth_failures_total", 0),
+        "oidc_failures": counters.get("oidc_failures_total", 0),
+        "latency_ms": latency,
         "active_requests": gauge["active_requests"],
         "active_tasks": gauge["active_tasks"],
         "active_sessions": gauge["active_sessions"],
         "peak_requests": gauge["peak_requests"],
         "queued_tasks": task_queue._backend.queue_size if task_queue._backend else 0,
+        "sentry_enabled": bool(get_settings().sentry_dsn),
+        "otel_enabled": bool(get_settings().otel_endpoint),
     }
 
 

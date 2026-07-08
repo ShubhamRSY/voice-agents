@@ -9,7 +9,9 @@ from __future__ import annotations
 
 import uuid
 from typing import Any
+from urllib.parse import urlencode
 
+import httpx
 from authlib.integrations.httpx_client import AsyncOAuth2Client
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
@@ -17,8 +19,15 @@ from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from src.auth import create_jwt, hash_password
 from src.config import get_settings
 from src.database import db
+from src.observability import collector
 
 router = APIRouter()
+
+
+def _oidc_fail(reason: str) -> RedirectResponse:
+    collector.increment("oidc_failures_total")
+    db.log_audit("default", None, "auth.oidc.failed", "user", {"reason": reason})
+    return RedirectResponse(url=f"/?auth_error={reason}", status_code=302)
 
 
 def _normalize_email(email: str) -> str:
@@ -37,7 +46,7 @@ def _split_csv(value: str) -> set[str]:
 
 async def _fetch_oidc_metadata(issuer_url: str) -> dict[str, Any]:
     issuer = issuer_url.rstrip("/")
-    async with AsyncOAuth2Client() as client:
+    async with httpx.AsyncClient() as client:
         resp = await client.get(f"{issuer}/.well-known/openid-configuration", timeout=15)
         resp.raise_for_status()
         return resp.json()
@@ -67,19 +76,17 @@ async def oidc_login(request: Request) -> RedirectResponse:
 
     # Keep state/nonce in httpOnly cookies to prevent JS tampering.
     # This is a lightweight approach that avoids a server-side session store.
-    redirect = RedirectResponse(url=authorization_endpoint)
+    query = urlencode({
+        "response_type": "code",
+        "client_id": s.oidc_client_id,
+        "redirect_uri": s.oidc_redirect_uri,
+        "scope": s.oidc_scopes,
+        "state": state,
+        "nonce": nonce,
+    })
+    redirect = RedirectResponse(url=f"{authorization_endpoint}?{query}", status_code=302)
     redirect.set_cookie("oidc_state", state, httponly=True, secure=True, samesite="lax", max_age=600)
     redirect.set_cookie("oidc_nonce", nonce, httponly=True, secure=True, samesite="lax", max_age=600)
-
-    redirect.headers["Location"] = (
-        f"{authorization_endpoint}"
-        f"?response_type=code"
-        f"&client_id={s.oidc_client_id}"
-        f"&redirect_uri={s.oidc_redirect_uri}"
-        f"&scope={s.oidc_scopes}"
-        f"&state={state}"
-        f"&nonce={nonce}"
-    )
     return redirect
 
 
@@ -87,17 +94,17 @@ async def oidc_login(request: Request) -> RedirectResponse:
 async def oidc_callback(request: Request, code: str | None = None, state: str | None = None, error: str | None = None) -> Any:
     s = get_settings()
     if error:
-        return RedirectResponse(url=f"/?auth_error={error}", status_code=302)
+        return _oidc_fail(error)
     if not code or not state:
-        return RedirectResponse(url="/?auth_error=oidc_missing_code", status_code=302)
+        return _oidc_fail("oidc_missing_code")
 
     cookie_state = request.cookies.get("oidc_state")
     cookie_nonce = request.cookies.get("oidc_nonce")
     if not cookie_state or cookie_state != state:
-        return RedirectResponse(url="/?auth_error=oidc_bad_state", status_code=302)
+        return _oidc_fail("oidc_bad_state")
 
     if not (s.oidc_enabled and s.oidc_issuer_url and s.oidc_client_id and s.oidc_client_secret and s.oidc_redirect_uri):
-        return RedirectResponse(url="/?auth_error=oidc_not_configured", status_code=302)
+        return _oidc_fail("oidc_not_configured")
 
     meta = await _fetch_oidc_metadata(s.oidc_issuer_url)
     token_endpoint = meta["token_endpoint"]
@@ -122,7 +129,7 @@ async def oidc_callback(request: Request, code: str | None = None, state: str | 
     email = _normalize_email(str(claims.get("email") or claims.get("preferred_username") or ""))
     name = str(claims.get("name") or claims.get("given_name") or email.split("@")[0] if email else "User")
     if not email:
-        return RedirectResponse(url="/?auth_error=oidc_no_email", status_code=302)
+        return _oidc_fail("oidc_no_email")
 
     tenant_id = s.oidc_default_tenant_id or "default"
     db.create_tenant(tenant_id, "Default Tenant", "default")
@@ -137,6 +144,7 @@ async def oidc_callback(request: Request, code: str | None = None, state: str | 
         user = db.get_user_by_email(email)
 
     db.update_last_login(user["id"])
+    db.log_audit(user["tenant_id"], user["id"], "auth.oidc.login", "user", {"email": email})
     jwt_token = create_jwt({
         "sub": user["id"],
         "tenant_id": user["tenant_id"],

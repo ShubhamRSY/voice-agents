@@ -28,9 +28,9 @@ from src.config import ROOT_DIR, get_settings, reload_settings
 from src.database import init_db
 from src.integrations.secrets_vault import get_secrets_vault
 from src.logging_config import setup_logging
-from src.middleware import RateLimitMiddleware, TenantMiddleware
+from src.middleware import MetricsMiddleware, RateLimitMiddleware, TenantMiddleware
 from src.tasks import task_queue
-from src.observability import active_gauge, setup_sentry, setup_opentelemetry
+from src.observability import setup_sentry, setup_opentelemetry
 from src.workflows.orchestrator import AgentOrchestrator
 
 STATIC_DIR = ROOT_DIR / "static"
@@ -89,16 +89,7 @@ app.add_middleware(
 )
 app.add_middleware(TenantMiddleware)
 app.add_middleware(RateLimitMiddleware, rpm=settings.rate_limit_rpm)
-
-
-@app.middleware("http")
-async def track_active_requests(request, call_next):
-    active_gauge.incr_requests()
-    try:
-        response = await call_next(request)
-    finally:
-        active_gauge.decr_requests()
-    return response
+app.add_middleware(MetricsMiddleware)
 
 
 # Domain routers — all under /api/v1

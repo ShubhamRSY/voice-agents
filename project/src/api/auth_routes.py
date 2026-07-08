@@ -16,12 +16,15 @@ router = APIRouter()
 
 @router.post("/auth/login")
 async def login(request: LoginRequest) -> dict[str, Any]:
+    from fastapi import HTTPException
+
     user = db.get_user_by_email(request.email)
     if not user or not verify_password(request.password, user["password_hash"]):
-        from fastapi import HTTPException
+        db.log_audit("default", None, "auth.login.failed", "user", {"email": request.email})
         raise HTTPException(status_code=401, detail="Invalid email or password")
 
     db.update_last_login(user["id"])
+    db.log_audit(user["tenant_id"], user["id"], "auth.login.success", "user", {"method": "password"})
     token = create_jwt({
         "sub": user["id"],
         "tenant_id": user["tenant_id"],

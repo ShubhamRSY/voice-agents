@@ -1,4 +1,4 @@
-"""Middleware for rate limiting, tenant resolution, and request logging."""
+"""Middleware for rate limiting, tenant resolution, request logging, and metrics."""
 
 import time
 from collections import defaultdict
@@ -11,6 +11,7 @@ from starlette.types import ASGIApp
 
 from src.cache import get_cache
 from src.auth import decode_jwt
+from src.observability import active_gauge, collector
 
 logger = structlog.get_logger()
 
@@ -129,3 +130,38 @@ class TenantMiddleware(BaseHTTPMiddleware):
 
         request.state.tenant_id = tenant_id
         return await call_next(request)
+
+
+class MetricsMiddleware(BaseHTTPMiddleware):
+    """Record request counts, latency, 4xx/5xx, and auth-failure metrics."""
+
+    def __init__(self, app: ASGIApp):
+        super().__init__(app)
+
+    async def dispatch(self, request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
+        active_gauge.incr_requests()
+        collector.increment("requests_total")
+        start = time.perf_counter()
+        response: Response | None = None
+        try:
+            response = await call_next(request)
+            return response
+        except Exception:
+            collector.increment("errors_total")
+            collector.increment("http_5xx_total")
+            raise
+        finally:
+            active_gauge.decr_requests()
+            collector.observe("request_latency_ms", (time.perf_counter() - start) * 1000)
+            if response is not None:
+                status = response.status_code
+                if status >= 500:
+                    collector.increment("errors_total")
+                    collector.increment("http_5xx_total")
+                elif status >= 400:
+                    collector.increment("http_4xx_total")
+                path = request.url.path
+                if path.endswith("/auth/login") and status == 401:
+                    collector.increment("auth_failures_total")
+                if "/auth/oidc/" in path and status >= 400:
+                    collector.increment("oidc_failures_total")

@@ -296,6 +296,17 @@ Full architecture → [docs/overview.md](docs/overview.md#architecture).
 - **Dark mode UI** — polished frontend with animations, typing indicator, streaming cursor
 - **Production infrastructure** — TLS termination, PostgreSQL, Redis, Sentry, OpenTelemetry, structured logging, automated backups
 
+### Enterprise operations (runbooks)
+
+| Milestone | Docs |
+|-----------|------|
+| M1 — SSO + observability | [OIDC Auth0 setup](docs/ops-oidc-auth0.md) · [Monitoring & alerts](docs/ops-monitoring.md) |
+| M2 — DR + load testing | [DR runbook (RPO/RTO)](docs/ops-dr-runbook.md) · [Load testing](docs/ops-load-testing.md) |
+| M3 — SOC 2 readiness | [SOC 2 checklist](docs/soc2-readiness.md) · [Access controls](docs/soc2/access-controls.md) · [Key rotation](docs/soc2/key-rotation.md) |
+| M4 — HA / multi-region | [HA architecture](docs/ha-multi-region.md) |
+
+Scripts: `scripts/restore-drill.sh` · `scripts/loadtest/k6-smoke.js` · `scripts/setup-backup-timer.sh`
+
 ---
 
 ## API Overview

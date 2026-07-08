@@ -32,6 +32,14 @@ class TestHealth:
         body = res.json()
         assert "active_requests" in body
         assert "uptime_seconds" in body
+        assert "auth_failures" in body
+        assert "latency_ms" in body
+
+    def test_metrics_increment_on_request(self, client):
+        before = client.get("/api/v1/observability/health").json()
+        client.get("/api/v1/health")
+        after = client.get("/api/v1/observability/health").json()
+        assert after["requests_processed"] >= before["requests_processed"] + 1
 
     def test_api_root(self, client):
         res = client.get("/api/v1")

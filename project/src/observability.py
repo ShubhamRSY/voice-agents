@@ -12,13 +12,22 @@ logger = structlog.get_logger()
 
 def setup_sentry() -> None:
     """Initialize Sentry SDK if DSN is configured."""
-    dsn = get_settings().sentry_dsn
+    settings = get_settings()
+    dsn = settings.sentry_dsn
     if not dsn:
         return
     try:
         import sentry_sdk
-        sentry_sdk.init(dsn=dsn, traces_sample_rate=0.25)
-        logger.info("sentry_initialized")
+        from sentry_sdk.integrations.fastapi import FastApiIntegration
+        from sentry_sdk.integrations.starlette import StarletteIntegration
+
+        sentry_sdk.init(
+            dsn=dsn,
+            environment=settings.app_env or "development",
+            traces_sample_rate=0.25,
+            integrations=[StarletteIntegration(), FastApiIntegration()],
+        )
+        logger.info("sentry_initialized", environment=settings.app_env)
     except Exception as e:
         logger.warning("sentry_init_failed", error=str(e))
 
@@ -98,6 +107,12 @@ class MetricsCollector:
             lines.append(f"# HELP nexus_{name} Gauge metric")
             lines.append(f"# TYPE nexus_{name} gauge")
             lines.append(f'nexus_{name}{{service="nexus"}} {val}')
+        for name, summary in snap["histograms"].items():
+            lines.append(f"# HELP nexus_{name} Request latency histogram")
+            lines.append(f"# TYPE nexus_{name} gauge")
+            lines.append(f'nexus_{name}_count{{service="nexus"}} {summary["count"]}')
+            lines.append(f'nexus_{name}_avg{{service="nexus"}} {summary["avg"]}')
+            lines.append(f'nexus_{name}_p95{{service="nexus"}} {summary["p95"]}')
         lines.append(f'nexus_uptime_seconds{{service="nexus"}} {snap["uptime_seconds"]}')
         return "\n".join(lines) + "\n"
 
