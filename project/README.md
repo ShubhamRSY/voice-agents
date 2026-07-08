@@ -141,6 +141,8 @@ uvicorn src.main:app --reload --port 8001
 
 Open **[http://127.0.0.1:8001](http://127.0.0.1:8001)** — the Nexus console loads with a welcome screen, session sidebar, and channel selector.
 
+If you deployed to a VM, open your production console URL (example): **[https://yournexus.duckdns.org/](https://yournexus.duckdns.org/)**.
+
 **Smoke test the API:**
 
 ```bash
