@@ -12,6 +12,8 @@ Nexus is an omnichannel AI agent platform for customer experience teams — one 
 
 </div>
 
+**Live pilot:** [https://yournexus.duckdns.org/](https://yournexus.duckdns.org/) — chat, copilot, voice, RAG, JWT auth, and Auth0 OIDC SSO.
+
 ---
 
 ## Table of Contents
@@ -69,12 +71,18 @@ Nexus is open-source, but a hosted/enterprise offering is planned for teams that
 - **Open-source**: AGPLv3 (`project/LICENSE`)
 - **Commercial license**: available for closed-source/proprietary usage — see [`COMMERCIAL_LICENSE.md`](COMMERCIAL_LICENSE.md)
 
-**Planned hosted features**
+**Planned hosted features** (beyond what’s already in the open-source repo)
 
-- **Managed deployments** (updates, backups, monitoring, alerts)
-- **SSO / enterprise auth** (SAML/OIDC) + user provisioning
+- **Fully managed operations** (hands-off updates, on-call, SLA)
 - **Advanced analytics & QA** (evaluation dashboards, coaching insights, quality scoring)
-- **Premium integrations** (CRM/ticketing/telephony connectors) and reliability tooling
+- **Premium integrations** (CRM/ticketing/telephony connectors) and white-glove onboarding
+
+**Already in open source (pilot-ready)**
+
+- OIDC SSO (Auth0 / Okta / Azure AD / Google Workspace) + JIT user provisioning
+- Request metrics, latency tracking, auth-failure counters (`/api/v1/metrics`)
+- Daily backups, restore drill, DR runbooks, k6 load-test harness
+- SOC 2 readiness checklist and access-control / key-rotation docs
 
 **Branding**
 
@@ -110,6 +118,18 @@ Nexus is organized around a small set of primitives so you can reason about the 
 
 ## Recent Changes
 
+### v2.1.0 — Enterprise pilot (July 2026)
+
+| Change | Description |
+|--------|-------------|
+| **Live production** | Deployed at [yournexus.duckdns.org](https://yournexus.duckdns.org/) (Oracle Cloud VM + Caddy + systemd) |
+| **OIDC SSO** | Auth0 integration with JIT provisioning, role mapping, audit logging — [setup guide](docs/ops-oidc-auth0.md) |
+| **Observability** | Request/latency/5xx/auth metrics middleware; Prometheus + JSON health dashboards |
+| **Reliability** | Daily backup timer, restore-drill script, RPO/RTO runbook |
+| **SOC 2 prep** | Evidence checklist, access-control policy template, key-rotation procedures |
+| **Load testing** | k6 smoke script with performance budgets — [docs](docs/ops-load-testing.md) |
+| **HA roadmap** | Multi-region / Postgres HA architecture doc for future scale — [docs](docs/ha-multi-region.md) |
+
 ### v2.0.0 — Production Hardening (June 2026)
 
 | Change | Description |
@@ -144,7 +164,7 @@ Nexus is organized around a small set of primitives so you can reason about the 
 ```bash
 # 1. Clone the repository
 git clone https://github.com/ShubhamRSY/voice-agents.git
-cd voice-agents
+cd voice-agents/project
 
 # 2. Create and activate a virtual environment
 python3 -m venv .venv
@@ -185,6 +205,18 @@ wscat -c ws://127.0.0.1:8001/api/v1/chat/stream
 ---
 
 ## Production Deployment
+
+### Production readiness (pilot)
+
+| Area | Status | Notes |
+|------|--------|-------|
+| **Core product** | Ready | Chat, copilot, voice, RAG, admin console |
+| **Auth** | Ready | JWT + Auth0 OIDC SSO |
+| **TLS / edge** | Ready | Caddy + Let's Encrypt |
+| **Backups & DR** | Ready | Daily timer + [restore drill](docs/ops-dr-runbook.md) |
+| **Monitoring** | Ready | Uptime alerts + in-app observability |
+| **SOC 2 audit** | Prep only | Checklist + policies — formal audit is future work |
+| **HA / multi-region** | Future | See [HA architecture](docs/ha-multi-region.md) |
 
 ### Docker Compose (recommended)
 
@@ -315,6 +347,9 @@ Scripts: `scripts/restore-drill.sh` · `scripts/loadtest/k6-smoke.js` · `script
 |--------|----------|-------------|
 | POST | `/api/v1/auth/register` | Register a new tenant + admin user |
 | POST | `/api/v1/auth/login` | Login, receive JWT |
+| GET | `/api/v1/auth/oidc/config` | OIDC SSO enabled flag (public) |
+| GET | `/api/v1/auth/oidc/login` | Start OIDC SSO redirect |
+| GET | `/api/v1/auth/oidc/callback` | OIDC callback (issues JWT) |
 | GET | `/api/v1/auth/me` | Current user info |
 | POST | `/api/v1/chat` | Send message, get AI response |
 | GET | `/api/v1/chat/sse` | SSE streaming chat (token-by-token) |

@@ -12,6 +12,8 @@ Nexus is an omnichannel AI agent platform for customer experience teams — one 
 
 </div>
 
+**Live pilot:** [https://yournexus.duckdns.org/](https://yournexus.duckdns.org/) — chat, copilot, voice, RAG, JWT auth, and Auth0 OIDC SSO.
+
 ---
 
 ## Table of Contents
@@ -69,12 +71,18 @@ Nexus is open-source, but a hosted/enterprise offering is planned for teams that
 - **Open-source**: AGPLv3 (`project/LICENSE`)
 - **Commercial license**: available for closed-source/proprietary usage — see [`project/COMMERCIAL_LICENSE.md`](project/COMMERCIAL_LICENSE.md)
 
-**Planned hosted features**
+**Planned hosted features** (beyond what’s already in the open-source repo)
 
-- **Managed deployments** (updates, backups, monitoring, alerts)
-- **SSO / enterprise auth** (SAML/OIDC) + user provisioning
+- **Fully managed operations** (hands-off updates, on-call, SLA)
 - **Advanced analytics & QA** (evaluation dashboards, coaching insights, quality scoring)
-- **Premium integrations** (CRM/ticketing/telephony connectors) and reliability tooling
+- **Premium integrations** (CRM/ticketing/telephony connectors) and white-glove onboarding
+
+**Already in open source (pilot-ready)**
+
+- OIDC SSO (Auth0 / Okta / Azure AD / Google Workspace) + JIT user provisioning
+- Request metrics, latency tracking, auth-failure counters (`/api/v1/metrics`)
+- Daily backups, restore drill, DR runbooks, k6 load-test harness
+- SOC 2 readiness checklist and access-control / key-rotation docs
 
 **Branding**
 
@@ -107,6 +115,18 @@ Nexus is organized around a small set of primitives so you can reason about the 
 ---
 
 ## Recent Changes
+
+### v2.1.0 — Enterprise pilot (July 2026)
+
+| Change | Description |
+|--------|-------------|
+| **Live production** | Deployed at [yournexus.duckdns.org](https://yournexus.duckdns.org/) (Oracle Cloud VM + Caddy + systemd) |
+| **OIDC SSO** | Auth0 integration with JIT provisioning, role mapping, audit logging — [setup guide](project/docs/ops-oidc-auth0.md) |
+| **Observability** | Request/latency/5xx/auth metrics middleware; Prometheus + JSON health dashboards |
+| **Reliability** | Daily backup timer, restore-drill script, RPO/RTO runbook |
+| **SOC 2 prep** | Evidence checklist, access-control policy template, key-rotation procedures |
+| **Load testing** | k6 smoke script with performance budgets |
+| **HA roadmap** | Multi-region / Postgres HA architecture doc for future scale |
 
 ### v2.0.0 — Production Hardening (June 2026)
 
@@ -151,7 +171,16 @@ uvicorn src.main:app --reload --port 8001
 
 Open **[http://127.0.0.1:8001](http://127.0.0.1:8001)** — the Nexus console loads with a welcome screen, session sidebar, and channel selector.
 
-Production console (example): `https://yournexus.duckdns.org/`
+**Live pilot:** [https://yournexus.duckdns.org/](https://yournexus.duckdns.org/)
+
+### Production readiness (pilot)
+
+| Area | Status |
+|------|--------|
+| Core product (chat, copilot, voice, RAG) | Ready |
+| Auth (JWT + Auth0 OIDC SSO) | Ready |
+| Backups, DR, uptime monitoring | Ready |
+| SOC 2 formal audit / HA multi-region | Future — see `project/docs/` |
 
 ---
 
