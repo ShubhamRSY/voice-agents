@@ -8,13 +8,14 @@ version = "2.0.0"
 description = "Production-grade enterprise AI agent platform for voice, chat, and copilot operations"
 readme = "README.md"
 requires-python = ">=3.11"
-license = { text = "MIT" }
+license = { text = "AGPL-3.0-only" }
 authors = [{ name = "Shubham RSY" }]
 keywords = ["voice-agents", "langchain", "fastapi", "rag", "telephony", "twilio"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Framework :: FastAPI",
     "Intended Audience :: Developers",
+    "License :: OSI Approved :: GNU Affero General Public License v3",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
