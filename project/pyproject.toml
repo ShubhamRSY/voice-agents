@@ -168,7 +168,7 @@ disable_error_code = ["import-untyped"]
 module = [
     "src.database",
 ]
-disable_error_code = ["arg-type", "misc"]
+disable_error_code = ["arg-type", "misc", "import-untyped"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
