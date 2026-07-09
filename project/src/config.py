@@ -166,6 +166,26 @@ class Settings(BaseSettings):
     jira_api_token: str = ""
     jira_project_key: str = "SUP"
 
+    # Freshdesk
+    freshdesk_domain: str = ""
+    freshdesk_api_key: str = ""
+
+    # Intercom
+    intercom_access_token: str = ""
+
+    # Asana
+    asana_access_token: str = ""
+
+    # Monday.com
+    monday_api_key: str = ""
+
+    # Notion
+    notion_api_key: str = ""
+
+    # GitHub
+    github_token: str = ""
+    github_repo: str = ""
+
     # Guest demo sandbox on login screen
     allow_guest_demo: bool = True
 

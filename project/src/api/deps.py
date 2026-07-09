@@ -67,6 +67,14 @@ class CredentialsUpdateRequest(BaseModel):
     salesforce_client_id: str | None = None
     salesforce_client_secret: str | None = None
     webhook_signing_secret: str | None = None
+    freshdesk_domain: str | None = None
+    freshdesk_api_key: str | None = None
+    intercom_access_token: str | None = None
+    asana_access_token: str | None = None
+    monday_api_key: str | None = None
+    notion_api_key: str | None = None
+    github_token: str | None = None
+    github_repo: str | None = None
 
 
 class VoiceSimulateRequest(BaseModel):

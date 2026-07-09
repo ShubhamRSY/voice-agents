@@ -31,6 +31,14 @@ CREDENTIAL_KEYS = (
     "salesforce_client_id",
     "salesforce_client_secret",
     "webhook_signing_secret",
+    "freshdesk_domain",
+    "freshdesk_api_key",
+    "intercom_access_token",
+    "asana_access_token",
+    "monday_api_key",
+    "notion_api_key",
+    "github_token",
+    "github_repo",
 )
 
 WEBHOOK_EVENTS = (

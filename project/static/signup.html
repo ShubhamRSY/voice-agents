@@ -80,9 +80,9 @@
       grid.innerHTML = (config.plans || []).map((p) => `
         <div class="plan${p.id === selectedPlan ? ' selected' : ''}" data-plan="${p.id}">
           <h3>${p.name}</h3>
-          <div class="price">$${p.price_monthly}<span style="font-size:0.9rem;font-weight:400;color:#a1a1aa">/mo</span></div>
+          <div class="price">${p.price_monthly === 0 ? 'Free' : `$${p.price_monthly}<span style="font-size:0.9rem;font-weight:400;color:#a1a1aa">/mo</span>`}</div>
           <div class="meta">${p.agents} agents · ${Array.isArray(p.channels) ? p.channels.join(', ') : p.channels}</div>
-          <div class="meta">${p.trial_days || 14}-day trial</div>
+          <div class="meta">${p.trial_days > 0 ? `${p.trial_days}-day trial` : p.price_monthly === 0 ? 'No credit card required' : '14-day trial'}</div>
         </div>`).join('');
       grid.querySelectorAll('.plan').forEach((el) => {
         el.addEventListener('click', () => {

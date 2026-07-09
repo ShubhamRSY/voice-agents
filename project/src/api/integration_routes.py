@@ -12,6 +12,12 @@ from src.integrations.secrets_vault import CREDENTIAL_KEYS, WEBHOOK_EVENTS, get_
 from src.integrations.slack import SlackNotifier
 from src.integrations.zendesk import ZendeskClient
 from src.integrations.servicenow import ServiceNowClient
+from src.integrations.freshdesk import FreshdeskClient
+from src.integrations.intercom import IntercomClient
+from src.integrations.asana import AsanaClient
+from src.integrations.monday import MondayClient
+from src.integrations.notion import NotionClient
+from src.integrations.github import GitHubClient
 from src.api.deps import (
     CredentialsUpdateRequest, WebhookRegisterRequest,
     integration_router, require_settings_token, env_credentials,
@@ -95,6 +101,30 @@ async def integrations_status() -> dict[str, Any]:
             "jira": {
                 "configured": bool(settings.jira_base_url and settings.jira_api_token),
                 "features": ["issue_sync"],
+            },
+            "freshdesk": {
+                "configured": bool(settings.freshdesk_domain and settings.freshdesk_api_key),
+                "features": ["ticket_sync", "contact_search"],
+            },
+            "intercom": {
+                "configured": bool(settings.intercom_access_token),
+                "features": ["conversations", "contact_search"],
+            },
+            "asana": {
+                "configured": bool(settings.asana_access_token),
+                "features": ["task_sync", "project_search"],
+            },
+            "monday": {
+                "configured": bool(settings.monday_api_key),
+                "features": ["item_sync", "board_management"],
+            },
+            "notion": {
+                "configured": bool(settings.notion_api_key),
+                "features": ["page_sync", "search"],
+            },
+            "github": {
+                "configured": bool(settings.github_token and settings.github_repo),
+                "features": ["issue_sync", "comments"],
             },
             "meta": {
                 "configured": bool(settings.meta_page_access_token),
@@ -196,3 +226,40 @@ async def servicenow_create_incident(short_description: str, description: str, c
 async def slack_send_alert(text: str, channel: str = "#general") -> dict:
     notifier = SlackNotifier()
     return await notifier.send_alert(channel, text)
+
+
+@router.post("/integrations/freshdesk/ticket")
+async def freshdesk_create_ticket(subject: str, description: str, email: str = "", priority: int = 2) -> dict:
+    client = FreshdeskClient()
+    return await client.create_ticket(subject, description, email, priority)
+
+
+@router.post("/integrations/intercom/conversation")
+async def intercom_create_conversation(subject: str, body: str, email: str) -> dict:
+    client = IntercomClient()
+    return await client.create_conversation(subject, body, email)
+
+
+@router.post("/integrations/asana/task")
+async def asana_create_task(name: str, notes: str = "", project_gid: str = "", assignee: str = "") -> dict:
+    client = AsanaClient()
+    return await client.create_task(name, notes, project_gid, assignee)
+
+
+@router.post("/integrations/monday/item")
+async def monday_create_item(board_id: int, name: str) -> dict:
+    client = MondayClient()
+    return await client.create_item(board_id, name)
+
+
+@router.post("/integrations/notion/page")
+async def notion_create_page(parent_page_id: str, title: str, content: str = "") -> dict:
+    client = NotionClient()
+    return await client.create_page(parent_page_id, title, content)
+
+
+@router.post("/integrations/github/issue")
+async def github_create_issue(title: str, body: str = "", labels: str = "") -> dict:
+    client = GitHubClient()
+    label_list = [label.strip() for label in labels.split(",") if label.strip()] if labels else None
+    return await client.create_issue(title, body, label_list)

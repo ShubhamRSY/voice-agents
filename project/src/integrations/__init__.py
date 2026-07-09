@@ -3,10 +3,22 @@
 from src.integrations.crm import CRMClient, HubSpotClient
 from src.integrations.secrets_vault import SecretsVault, get_secrets_vault, mask_secret
 from src.integrations.webhooks import IntegrationRouter, WebhookDispatcher
+from src.integrations.freshdesk import FreshdeskClient
+from src.integrations.intercom import IntercomClient
+from src.integrations.asana import AsanaClient
+from src.integrations.monday import MondayClient
+from src.integrations.notion import NotionClient
+from src.integrations.github import GitHubClient
 
 __all__ = [
     "CRMClient",
     "HubSpotClient",
+    "FreshdeskClient",
+    "IntercomClient",
+    "AsanaClient",
+    "MondayClient",
+    "NotionClient",
+    "GitHubClient",
     "IntegrationRouter",
     "SecretsVault",
     "WebhookDispatcher",
