@@ -89,6 +89,7 @@ services:
       APP_ENV: production
       AUTH_REQUIRED: "true"
       DEMO_MODE: "false"
+      ALLOW_REGISTRATION: "true"
       GUNICORN_WORKERS: "1"
     depends_on:
       postgres:
