@@ -22,3 +22,4 @@ data/.jwt_secret
 data/nexus.db*
 data/integrations.vault
 data/hf_cache/
+backups/
