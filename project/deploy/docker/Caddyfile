@@ -16,15 +16,6 @@
         Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; img-src 'self' data:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self';"
     }
 
-    # Rate limiting at the edge
-    rate_limit {
-        zone dynamic {
-            key {remote_host}
-            events 120
-            window 1m
-        }
-    }
-
     # Proxy to nexus backend
     reverse_proxy {$NEXUS_URL} {
         # Strip /api prefix if needed
