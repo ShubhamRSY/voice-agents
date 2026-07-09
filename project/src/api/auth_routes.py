@@ -121,7 +121,7 @@ async def demo_login() -> dict[str, Any]:
     demo_user = DEMO_USERS[1]  # agent@acme.com
     user = db.get_user_by_email(demo_user["email"])
     if not user:
-        db.create_tenant(DEMO_TENANT_ID, "Acme Demo", "demo-acme")
+        db.create_tenant(DEMO_TENANT_ID, "Nexus Demo", "nexus-demo")
         db.create_user(
             demo_user["id"], DEMO_TENANT_ID, demo_user["email"],
             hash_password(demo_user["password"]), demo_user["name"], demo_user["role"],

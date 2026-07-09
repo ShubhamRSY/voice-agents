@@ -199,25 +199,29 @@ async def submit_csat_cx(body: CSATRequest) -> dict:
 
 @router.get("/cx/dashboard")
 async def cx_dashboard(hours: int = 168, ctx: Any = Depends(require_auth)) -> dict:
-    tenant_id = ctx.tenant_id if ctx else "default"
-    conv = db.get_conversation_analytics(tenant_id, hours=hours)
-    csat = db.get_csat_stats(tenant_id)
-    nps = db.get_nps_stats(tenant_id)
-    handoff = db.get_handoff_stats(tenant_id, hours=hours)
-    agent_stats = analytics.get_agent_scorecard(tenant_id, hours=hours)
-    timeline = analytics.get_conversation_timeline(tenant_id, hours=hours)
-    avg_response_ms = db.get_avg_response_time_ms(tenant_id, hours=hours)
-    message_feedback = db.get_message_feedback_stats(tenant_id)
-    return {
-        "conversations": {**conv, "avg_response_time_ms": avg_response_ms},
-        "csat": csat,
-        "nps": nps,
-        "handoff": handoff,
-        "agents": agent_stats,
-        "timeline": timeline,
-        "message_feedback": message_feedback,
-        "period_hours": hours,
-    }
+    try:
+        tenant_id = ctx.tenant_id if ctx else "default"
+        conv = db.get_conversation_analytics(tenant_id, hours=hours)
+        csat = db.get_csat_stats(tenant_id)
+        nps = db.get_nps_stats(tenant_id)
+        handoff = db.get_handoff_stats(tenant_id, hours=hours)
+        agent_stats = analytics.get_agent_scorecard(tenant_id, hours=hours)
+        timeline = analytics.get_conversation_timeline(tenant_id, hours=hours)
+        avg_response_ms = db.get_avg_response_time_ms(tenant_id, hours=hours)
+        message_feedback = db.get_message_feedback_stats(tenant_id)
+        return {
+            "conversations": {**conv, "avg_response_time_ms": avg_response_ms},
+            "csat": csat,
+            "nps": nps,
+            "handoff": handoff,
+            "agents": agent_stats,
+            "timeline": timeline,
+            "message_feedback": message_feedback,
+            "period_hours": hours,
+        }
+    except Exception as e:
+        logger.error("cx_dashboard_error", error=str(e))
+        return {"conversations": {}, "csat": {}, "nps": {}, "handoff": {}, "agents": [], "timeline": [], "message_feedback": {}, "period_hours": hours}
 
 
 @router.post("/messages/{message_id}/feedback")

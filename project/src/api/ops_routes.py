@@ -91,22 +91,38 @@ async def observability_health() -> dict:
 
 @router.get("/analytics/dashboard")
 async def analytics_dashboard(hours: int = 24, ctx: AuthContext = Depends(require_auth)) -> dict:
-    return {"dashboard": analytics.get_dashboard(ctx.tenant_id, hours)}
+    try:
+        return {"dashboard": analytics.get_dashboard(ctx.tenant_id, hours)}
+    except Exception as e:
+        logger.error("analytics_dashboard_error", error=str(e))
+        return {"dashboard": {"conversations": {}, "csat": {}, "active_sessions": 0, "recent_activity": [], "period_hours": hours}}
 
 
 @router.get("/analytics/agents")
 async def analytics_agents(hours: int = 168, ctx: AuthContext = Depends(require_auth)) -> dict:
-    return {"scorecard": analytics.get_agent_scorecard(ctx.tenant_id, hours)}
+    try:
+        return {"scorecard": analytics.get_agent_scorecard(ctx.tenant_id, hours)}
+    except Exception as e:
+        logger.error("analytics_agents_error", error=str(e))
+        return {"scorecard": []}
 
 
 @router.get("/analytics/timeline")
 async def analytics_timeline(hours: int = 24, ctx: AuthContext = Depends(require_auth)) -> dict:
-    return {"timeline": analytics.get_conversation_timeline(ctx.tenant_id, hours)}
+    try:
+        return {"timeline": analytics.get_conversation_timeline(ctx.tenant_id, hours)}
+    except Exception as e:
+        logger.error("analytics_timeline_error", error=str(e))
+        return {"timeline": []}
 
 
 @router.get("/analytics/audit-log")
 async def audit_log(limit: int = 100, ctx: AuthContext = Depends(require_auth)) -> dict:
-    return {"logs": db.get_audit_logs(ctx.tenant_id, limit)}
+    try:
+        return {"logs": db.get_audit_logs(ctx.tenant_id, limit)}
+    except Exception as e:
+        logger.error("audit_log_error", error=str(e))
+        return {"logs": []}
 
 
 # ---------------------------------------------------------------------------
