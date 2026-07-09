@@ -12,6 +12,8 @@ data/.vault_key
 dist/
 build/
 .DS_Store
+.mypy_cache/
+.ruff_cache/
 reports/coverage/
 .benchmarks/
 htmlcov/

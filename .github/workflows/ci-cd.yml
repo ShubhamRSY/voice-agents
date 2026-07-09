@@ -1,4 +1,4 @@
-name: CI
+name: CI/CD
 
 on:
   push:
@@ -8,6 +8,8 @@ on:
 
 env:
   PYTHON_VERSION: "3.11"
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
   lint:
@@ -140,10 +142,8 @@ jobs:
           DEMO_MODE: "true"
         run: |
           set -e
-          # Start server in background
           python -m uvicorn src.main:app --host 127.0.0.1 --port 8001 &
           SERVER_PID=$!
-          # Wait for server
           for i in $(seq 1 30); do
             if curl -sf http://127.0.0.1:8001/api/v1/health > /dev/null 2>&1; then
               break
@@ -151,41 +151,53 @@ jobs:
             sleep 1
           done
           curl -sf http://127.0.0.1:8001/api/v1/health || { echo "Server failed to start"; kill $SERVER_PID 2>/dev/null; exit 1; }
-          # Run e2e tests + live comprehensive tests (retry flaky once)
           pytest tests/e2e/ -v --timeout=120 --reruns 2
           pytest tests/test_comprehensive_e2e.py -v --timeout=120 --reruns 2
-          # Cleanup
           kill $SERVER_PID 2>/dev/null || true
         working-directory: project
 
-  docker:
+  publish:
     runs-on: ubuntu-latest
     needs: [lint, test]
     if: github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v4
-      - name: Build Docker image
-        run: docker build -f deploy/docker/Dockerfile -t nexus-voice-agents .
-        working-directory: project
-      - name: Smoke test Docker image
-        run: |
-          # Start container
-          CID=$(docker run -d -p 8000:8000 --name nexus-test nexus-voice-agents)
-          echo "Container ID: $CID"
-          sleep 5
-          # Show container status & logs for diagnostics
-          echo "--- Container status ---"
-          docker ps -a --filter name=nexus-test
-          echo "--- Container logs ---"
-          docker logs nexus-test 2>&1 || true
-          # Health check
-          if curl -sf http://localhost:8000/api/v1/health > /dev/null 2>&1; then
-            echo "Docker smoke test passed"
-            docker stop nexus-test
-            docker rm nexus-test
-          else
-            echo "ERROR: Health check failed"
-            docker stop nexus-test 2>/dev/null || true
-            docker rm nexus-test 2>/dev/null || true
-            exit 1
-          fi
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Extract metadata for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=sha,prefix=,format=short
+            type=raw,value=latest,enable={{is_default_branch}}
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: project
+          file: project/deploy/docker/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [publish, e2e]
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Deploy to VPS via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script: |
+            cd /opt/nexus
+            docker compose pull nexus
+            docker compose up -d --no-deps --build nexus
+            docker image prune -f
