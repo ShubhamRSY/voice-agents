@@ -965,21 +965,35 @@ def _ensure_db() -> None:
         if _db_initialized:
             return
         with _get_connection_unchecked() as conn:
-            current = _get_user_version(conn)
-            if current < _SCHEMA_VERSION:
-                _run_migrations(conn, current)
-            if _is_sqlite(conn):
-                conn.execute(
-                    "INSERT OR IGNORE INTO tenants (id, name, slug, settings) VALUES (?, ?, ?, ?)",
-                    ("default", "Default Tenant", "default", "{}"),
-                )
-            else:
+            if not _is_sqlite(conn):
                 with conn.cursor() as cur:
-                    cur.execute(
-                        "INSERT INTO tenants (id, name, slug, settings) VALUES (%s, %s, %s, %s) ON CONFLICT DO NOTHING",
+                    cur.execute("SELECT pg_try_advisory_lock(802348571)")
+                    locked = cur.fetchone()[0]
+                if not locked:
+                    logger.info("migration_lock_busy")
+                    return
+                conn.commit()
+            try:
+                current = _get_user_version(conn)
+                if current < _SCHEMA_VERSION:
+                    _run_migrations(conn, current)
+                if _is_sqlite(conn):
+                    conn.execute(
+                        "INSERT OR IGNORE INTO tenants (id, name, slug, settings) VALUES (?, ?, ?, ?)",
                         ("default", "Default Tenant", "default", "{}"),
                     )
-                conn.commit()
+                else:
+                    with conn.cursor() as cur:
+                        cur.execute(
+                            "INSERT INTO tenants (id, name, slug, settings) VALUES (%s, %s, %s, %s) ON CONFLICT DO NOTHING",
+                            ("default", "Default Tenant", "default", "{}"),
+                        )
+                    conn.commit()
+            finally:
+                if not _is_sqlite(conn):
+                    with conn.cursor() as cur:
+                        cur.execute("SELECT pg_advisory_unlock(802348571)")
+                    conn.commit()
         _db_initialized = True
 
 
