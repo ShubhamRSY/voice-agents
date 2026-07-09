@@ -128,6 +128,9 @@ async def demo_login() -> dict[str, Any]:
         )
         user = db.get_user_by_email(demo_user["email"])
 
+    if not user:
+        raise HTTPException(status_code=500, detail="Demo user could not be provisioned")
+
     token = create_jwt({
         "sub": user["id"],
         "tenant_id": user["tenant_id"],
