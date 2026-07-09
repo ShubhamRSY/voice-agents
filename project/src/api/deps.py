@@ -84,6 +84,41 @@ class CredentialsUpdateRequest(BaseModel):
     snowflake_warehouse: str | None = None
     snowflake_database: str | None = None
     snowflake_schema: str | None = None
+    pagerduty_api_key: str | None = None
+    pagerduty_service_id: str | None = None
+    linear_api_key: str | None = None
+    linear_team_id: str | None = None
+    bigquery_project_id: str | None = None
+    bigquery_dataset_id: str | None = None
+    bigquery_table_id: str | None = None
+    bigquery_access_token: str | None = None
+    help_scout_api_key: str | None = None
+    help_scout_mailbox_id: str | None = None
+    clickup_api_token: str | None = None
+    clickup_list_id: str | None = None
+    trello_api_key: str | None = None
+    trello_api_token: str | None = None
+    trello_list_id: str | None = None
+    front_api_token: str | None = None
+    front_channel_id: str | None = None
+    amplitude_api_key: str | None = None
+    azure_devops_org: str | None = None
+    azure_devops_project: str | None = None
+    azure_devops_pat: str | None = None
+    shopify_shop_domain: str | None = None
+    shopify_access_token: str | None = None
+    mailchimp_api_key: str | None = None
+    mailchimp_list_id: str | None = None
+    mailchimp_server: str | None = None
+    zoho_access_token: str | None = None
+    zoho_api_domain: str | None = None
+    bamboohr_subdomain: str | None = None
+    bamboohr_api_key: str | None = None
+    ringcentral_webhook_url: str | None = None
+    confluence_base_url: str | None = None
+    confluence_user_email: str | None = None
+    confluence_api_token: str | None = None
+    confluence_space_key: str | None = None
 
 
 class VoiceSimulateRequest(BaseModel):

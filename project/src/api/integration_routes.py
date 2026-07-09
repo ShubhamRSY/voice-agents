@@ -21,6 +21,22 @@ from src.integrations.github import GitHubClient
 from src.integrations.teams import TeamsClient
 from src.integrations.pipedrive import PipedriveClient
 from src.integrations.snowflake import SnowflakeClient
+from src.integrations.pagerduty import PagerDutyClient
+from src.integrations.linear import LinearClient
+from src.integrations.bigquery import BigQueryClient
+from src.integrations.help_scout import HelpScoutClient
+from src.integrations.clickup import ClickUpClient
+from src.integrations.trello import TrelloClient
+from src.integrations.front import FrontClient
+from src.integrations.amplitude import AmplitudeClient
+from src.integrations.azure_devops import AzureDevOpsClient
+from src.integrations.shopify import ShopifyClient
+from src.integrations.stripe_integration import StripeClient
+from src.integrations.mailchimp import MailchimpClient
+from src.integrations.zoho_crm import ZohoCRMClient
+from src.integrations.bamboohr import BambooHRClient
+from src.integrations.ringcentral import RingCentralClient
+from src.integrations.confluence import ConfluenceClient
 from src.integrations.catalog import CATEGORY_LABELS, TIER_LABELS, catalog_summary, get_catalog
 from src.api.deps import (
     CredentialsUpdateRequest, WebhookRegisterRequest,
@@ -186,6 +202,75 @@ async def integrations_status() -> dict[str, Any]:
                 ),
                 "features": ["sql_execute", "conversation_events"],
             },
+            "pagerduty": {
+                "configured": bool(settings.pagerduty_api_key),
+                "features": ["incident_create", "on_call_alerts"],
+            },
+            "linear": {
+                "configured": bool(settings.linear_api_key),
+                "features": ["issue_sync"],
+            },
+            "bigquery": {
+                "configured": bool(
+                    settings.bigquery_project_id
+                    and settings.bigquery_dataset_id
+                    and settings.bigquery_table_id
+                    and settings.bigquery_access_token
+                ),
+                "features": ["row_insert", "conversation_events"],
+            },
+            "help_scout": {
+                "configured": bool(settings.help_scout_api_key),
+                "features": ["conversation_sync", "shared_inbox"],
+            },
+            "clickup": {
+                "configured": bool(settings.clickup_api_token),
+                "features": ["task_sync"],
+            },
+            "trello": {
+                "configured": bool(settings.trello_api_key and settings.trello_api_token),
+                "features": ["card_sync", "kanban"],
+            },
+            "front": {
+                "configured": bool(settings.front_api_token),
+                "features": ["inbox_sync", "message_send"],
+            },
+            "amplitude": {
+                "configured": bool(settings.amplitude_api_key),
+                "features": ["event_tracking", "analytics"],
+            },
+            "azure_devops": {
+                "configured": bool(settings.azure_devops_org and settings.azure_devops_project and settings.azure_devops_pat),
+                "features": ["work_item_sync"],
+            },
+            "shopify": {
+                "configured": bool(settings.shopify_shop_domain and settings.shopify_access_token),
+                "features": ["customer_lookup", "order_context"],
+            },
+            "stripe": {
+                "configured": bool(settings.stripe_secret_key),
+                "features": ["customer_lookup", "billing_context"],
+            },
+            "mailchimp": {
+                "configured": bool(settings.mailchimp_api_key),
+                "features": ["list_sync", "subscriber_add"],
+            },
+            "zoho": {
+                "configured": bool(settings.zoho_access_token),
+                "features": ["lead_sync", "crm_lookup"],
+            },
+            "bamboohr": {
+                "configured": bool(settings.bamboohr_subdomain and settings.bamboohr_api_key),
+                "features": ["employee_lookup", "hris_context"],
+            },
+            "ringcentral": {
+                "configured": bool(settings.ringcentral_webhook_url),
+                "features": ["telephony_alerts"],
+            },
+            "confluence": {
+                "configured": bool(settings.confluence_base_url and settings.confluence_api_token),
+                "features": ["page_sync", "knowledge_base"],
+            },
             "meta": {
                 "configured": bool(settings.meta_page_access_token),
                 "features": ["messenger", "instagram", "inbound_webhook"],
@@ -346,3 +431,88 @@ async def snowflake_insert_event(
 ) -> dict:
     client = SnowflakeClient()
     return await client.insert_conversation_event(session_id, channel, sentiment, summary)
+
+
+@router.post("/integrations/pagerduty/incident")
+async def pagerduty_create_incident(title: str, body: str = "", urgency: str = "high") -> dict:
+    return await PagerDutyClient().create_incident(title, body, urgency)
+
+
+@router.post("/integrations/linear/issue")
+async def linear_create_issue(title: str, description: str = "") -> dict:
+    return await LinearClient().create_issue(title, description)
+
+
+@router.post("/integrations/bigquery/event")
+async def bigquery_insert_event(
+    session_id: str, channel: str, sentiment: str = "", summary: str = ""
+) -> dict:
+    return await BigQueryClient().insert_conversation_event(session_id, channel, sentiment, summary)
+
+
+@router.post("/integrations/help-scout/conversation")
+async def help_scout_create_conversation(subject: str, body: str, customer_email: str) -> dict:
+    return await HelpScoutClient().create_conversation(subject, body, customer_email)
+
+
+@router.post("/integrations/clickup/task")
+async def clickup_create_task(name: str, description: str = "", list_id: str = "") -> dict:
+    return await ClickUpClient().create_task(name, description, list_id)
+
+
+@router.post("/integrations/trello/card")
+async def trello_create_card(name: str, desc: str = "", list_id: str = "") -> dict:
+    return await TrelloClient().create_card(name, desc, list_id)
+
+
+@router.post("/integrations/front/message")
+async def front_create_message(subject: str, body: str, to: str) -> dict:
+    return await FrontClient().create_message(subject, body, to)
+
+
+@router.post("/integrations/amplitude/event")
+async def amplitude_track_event(event_type: str, session_id: str = "", channel: str = "") -> dict:
+    return await AmplitudeClient().track_event(event_type, session_id=session_id, properties={"channel": channel})
+
+
+@router.post("/integrations/azure-devops/work-item")
+async def azure_devops_create_work_item(title: str, description: str = "", work_item_type: str = "Task") -> dict:
+    return await AzureDevOpsClient().create_work_item(title, description, work_item_type)
+
+
+@router.get("/integrations/shopify/customer")
+async def shopify_find_customer(email: str) -> dict:
+    customer = await ShopifyClient().find_customer(email)
+    return customer or {"found": False}
+
+
+@router.get("/integrations/stripe/customer")
+async def stripe_find_customer(email: str) -> dict:
+    customer = await StripeClient().find_customer(email)
+    return customer or {"found": False}
+
+
+@router.post("/integrations/mailchimp/subscriber")
+async def mailchimp_add_subscriber(email: str, first_name: str = "", last_name: str = "") -> dict:
+    return await MailchimpClient().add_subscriber(email, first_name, last_name)
+
+
+@router.post("/integrations/zoho/lead")
+async def zoho_create_lead(last_name: str, email: str = "", company: str = "") -> dict:
+    return await ZohoCRMClient().create_lead(last_name, email, company)
+
+
+@router.get("/integrations/bamboohr/employee")
+async def bamboohr_find_employee(email: str) -> dict:
+    employee = await BambooHRClient().find_employee(email)
+    return employee or {"found": False}
+
+
+@router.post("/integrations/ringcentral/notify")
+async def ringcentral_send_notification(text: str, title: str = "Nexus alert") -> dict:
+    return await RingCentralClient().send_notification(text, title)
+
+
+@router.post("/integrations/confluence/page")
+async def confluence_create_page(title: str, body: str = "") -> dict:
+    return await ConfluenceClient().create_page(title, body)

@@ -201,6 +201,71 @@ class Settings(BaseSettings):
     snowflake_database: str = ""
     snowflake_schema: str = "PUBLIC"
 
+    # PagerDuty
+    pagerduty_api_key: str = ""
+    pagerduty_service_id: str = ""
+
+    # Linear
+    linear_api_key: str = ""
+    linear_team_id: str = ""
+
+    # Google BigQuery
+    bigquery_project_id: str = ""
+    bigquery_dataset_id: str = ""
+    bigquery_table_id: str = ""
+    bigquery_access_token: str = ""
+
+    # Help Scout
+    help_scout_api_key: str = ""
+    help_scout_mailbox_id: str = ""
+
+    # ClickUp
+    clickup_api_token: str = ""
+    clickup_list_id: str = ""
+
+    # Trello
+    trello_api_key: str = ""
+    trello_api_token: str = ""
+    trello_list_id: str = ""
+
+    # Front
+    front_api_token: str = ""
+    front_channel_id: str = ""
+
+    # Amplitude
+    amplitude_api_key: str = ""
+
+    # Azure DevOps
+    azure_devops_org: str = ""
+    azure_devops_project: str = ""
+    azure_devops_pat: str = ""
+
+    # Shopify
+    shopify_shop_domain: str = ""
+    shopify_access_token: str = ""
+
+    # Mailchimp
+    mailchimp_api_key: str = ""
+    mailchimp_list_id: str = ""
+    mailchimp_server: str = ""
+
+    # Zoho CRM
+    zoho_access_token: str = ""
+    zoho_api_domain: str = "www.zohoapis.com"
+
+    # BambooHR
+    bamboohr_subdomain: str = ""
+    bamboohr_api_key: str = ""
+
+    # RingCentral
+    ringcentral_webhook_url: str = ""
+
+    # Confluence
+    confluence_base_url: str = ""
+    confluence_user_email: str = ""
+    confluence_api_token: str = ""
+    confluence_space_key: str = "NX"
+
     # Guest demo sandbox on login screen
     allow_guest_demo: bool = True
 
