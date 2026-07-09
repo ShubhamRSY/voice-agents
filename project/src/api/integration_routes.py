@@ -37,6 +37,32 @@ from src.integrations.zoho_crm import ZohoCRMClient
 from src.integrations.bamboohr import BambooHRClient
 from src.integrations.ringcentral import RingCentralClient
 from src.integrations.confluence import ConfluenceClient
+
+from src.integrations.dynamics365 import Dynamics365Client
+from src.integrations.copper import CopperClient
+from src.integrations.marketo import MarketoClient
+from src.integrations.klaviyo import KlaviyoClient
+from src.integrations.guru import GuruClient
+from src.integrations.document360 import Document360Client
+from src.integrations.five9 import Five9Client
+from src.integrations.genesys import GenesysClient
+from src.integrations.nice import NiceClient
+from src.integrations.zoom import ZoomClient
+from src.integrations.vonage import VonageClient
+from src.integrations.dialpad import DialpadClient
+from src.integrations.aircall import AircallClient
+from src.integrations.workday import WorkdayClient
+from src.integrations.adp import ADPClient
+from src.integrations.tableau import TableauClient
+from src.integrations.powerbi import PowerBIClient
+from src.integrations.creatio import CreatioClient
+from src.integrations.salesloft import SalesloftClient
+from src.integrations.sharepoint import SharePointClient
+from src.integrations.talkdesk import TalkdeskClient
+from src.integrations.ujet import UjetClient
+from src.integrations.eight_by_eight import EightByEightClient
+from src.integrations.gusto import GustoClient
+from src.integrations.epic import EpicClient
 from src.integrations.catalog import CATEGORY_LABELS, TIER_LABELS, catalog_summary, get_catalog
 from src.api.deps import (
     CredentialsUpdateRequest, WebhookRegisterRequest,
@@ -270,6 +296,106 @@ async def integrations_status() -> dict[str, Any]:
             "confluence": {
                 "configured": bool(settings.confluence_base_url and settings.confluence_api_token),
                 "features": ["page_sync", "knowledge_base"],
+            },
+            "dynamics": {
+                "configured": bool(settings.dynamics_instance_url and settings.dynamics_access_token),
+                "features": ["case_sync", "crm_lookup"],
+            },
+            "copper": {
+                "configured": bool(settings.copper_api_key and settings.copper_user_email),
+                "features": ["lead_sync"],
+            },
+            "marketo": {
+                "configured": bool(settings.marketo_client_id and settings.marketo_client_secret and settings.marketo_base_url),
+                "features": ["lead_capture"],
+            },
+            "klaviyo": {
+                "configured": bool(settings.klaviyo_api_key),
+                "features": ["event_tracking"],
+            },
+            "guru": {
+                "configured": bool(settings.guru_api_token),
+                "features": ["card_sync", "knowledge"],
+            },
+            "document360": {
+                "configured": bool(settings.document360_api_token and settings.document360_base_url),
+                "features": ["article_sync"],
+            },
+            "five9": {
+                "configured": bool(settings.five9_webhook_url or (settings.five9_api_username and settings.five9_api_password)),
+                "features": ["disposition_sync"],
+            },
+            "genesys": {
+                "configured": bool(settings.genesys_api_key),
+                "features": ["callback_sync"],
+            },
+            "nice": {
+                "configured": bool(settings.nice_api_key),
+                "features": ["contact_sync"],
+            },
+            "zoom": {
+                "configured": bool(settings.zoom_webhook_url or settings.zoom_client_id),
+                "features": ["notifications"],
+            },
+            "vonage": {
+                "configured": bool(settings.vonage_api_key and settings.vonage_api_secret),
+                "features": ["sms"],
+            },
+            "dialpad": {
+                "configured": bool(settings.dialpad_api_key),
+                "features": ["sms"],
+            },
+            "aircall": {
+                "configured": bool(settings.aircall_api_id and settings.aircall_api_token),
+                "features": ["contact_sync"],
+            },
+            "workday": {
+                "configured": bool(settings.workday_tenant and settings.workday_username and settings.workday_password),
+                "features": ["worker_lookup"],
+            },
+            "adp": {
+                "configured": bool(settings.adp_client_id and settings.adp_client_secret),
+                "features": ["worker_lookup"],
+            },
+            "tableau": {
+                "configured": bool(settings.tableau_server_url and settings.tableau_token_name and settings.tableau_token_secret),
+                "features": ["analytics_push"],
+            },
+            "powerbi": {
+                "configured": bool(settings.powerbi_access_token and settings.powerbi_dataset_id),
+                "features": ["dataset_push"],
+            },
+            "creatio": {
+                "configured": bool(settings.creatio_base_url and settings.creatio_username and settings.creatio_password),
+                "features": ["lead_sync"],
+            },
+            "salesloft": {
+                "configured": bool(settings.salesloft_api_key),
+                "features": ["person_sync"],
+            },
+            "sharepoint": {
+                "configured": bool(settings.sharepoint_site_url and settings.sharepoint_access_token),
+                "features": ["list_sync"],
+            },
+            "talkdesk": {
+                "configured": bool(settings.talkdesk_api_token),
+                "features": ["contact_sync"],
+            },
+            "ujet": {
+                "configured": bool(settings.ujet_api_key and settings.ujet_subdomain),
+                "features": ["callback_sync"],
+            },
+            "eight_by_eight": {
+                "configured": bool(settings.eight_by_eight_api_key or settings.eight_by_eight_webhook_url),
+                "features": ["telephony_alerts"],
+            },
+            "gusto": {
+                "configured": bool(settings.gusto_access_token and settings.gusto_company_id),
+                "features": ["employee_lookup"],
+            },
+            "epic": {
+                "configured": bool(settings.epic_fhir_base_url and settings.epic_fhir_access_token),
+                "features": ["patient_lookup", "fhir"],
             },
             "meta": {
                 "configured": bool(settings.meta_page_access_token),
@@ -516,3 +642,132 @@ async def ringcentral_send_notification(text: str, title: str = "Nexus alert") -
 @router.post("/integrations/confluence/page")
 async def confluence_create_page(title: str, body: str = "") -> dict:
     return await ConfluenceClient().create_page(title, body)
+
+
+@router.post("/integrations/dynamics/case")
+async def dynamics_create_case(title: str, description: str = "") -> dict:
+    return await Dynamics365Client().create_case(title, description)
+
+
+@router.post("/integrations/copper/lead")
+async def copper_create_lead(name: str, email: str = "") -> dict:
+    return await CopperClient().create_lead(name, email)
+
+
+@router.post("/integrations/marketo/lead")
+async def marketo_create_lead(email: str, first_name: str = "", last_name: str = "") -> dict:
+    return await MarketoClient().create_lead(email, first_name, last_name)
+
+
+@router.post("/integrations/klaviyo/event")
+async def klaviyo_track_event(event_name: str, email: str) -> dict:
+    return await KlaviyoClient().track_event(event_name, email)
+
+
+@router.post("/integrations/guru/card")
+async def guru_create_card(title: str, content: str = "") -> dict:
+    return await GuruClient().create_card(title, content)
+
+
+@router.post("/integrations/document360/article")
+async def document360_create_article(title: str, content: str = "") -> dict:
+    return await Document360Client().create_article(title, content)
+
+
+@router.post("/integrations/five9/disposition")
+async def five9_notify_disposition(call_id: str, disposition: str, notes: str = "") -> dict:
+    return await Five9Client().notify_disposition(call_id, disposition, notes)
+
+
+@router.post("/integrations/genesys/callback")
+async def genesys_create_callback(phone: str, name: str = "") -> dict:
+    return await GenesysClient().create_callback(phone, name)
+
+
+@router.post("/integrations/nice/contact")
+async def nice_create_contact(phone: str, skill_id: str = "") -> dict:
+    return await NiceClient().create_contact(phone, skill_id)
+
+
+@router.post("/integrations/zoom/notify")
+async def zoom_send_notification(text: str) -> dict:
+    return await ZoomClient().send_notification(text)
+
+
+@router.post("/integrations/vonage/sms")
+async def vonage_send_sms(to: str, text: str) -> dict:
+    return await VonageClient().send_sms(to, text)
+
+
+@router.post("/integrations/dialpad/sms")
+async def dialpad_send_sms(to: str, text: str) -> dict:
+    return await DialpadClient().send_sms(to, text)
+
+
+@router.post("/integrations/aircall/contact")
+async def aircall_create_contact(first_name: str, phone: str, email: str = "") -> dict:
+    return await AircallClient().create_contact(first_name, phone, email)
+
+
+@router.get("/integrations/workday/worker")
+async def workday_find_worker(email: str) -> dict:
+    worker = await WorkdayClient().find_worker(email)
+    return worker or {"found": False}
+
+
+@router.get("/integrations/adp/worker")
+async def adp_find_worker(email: str) -> dict:
+    worker = await ADPClient().find_worker(email)
+    return worker or {"found": False}
+
+
+@router.post("/integrations/tableau/event")
+async def tableau_publish_event(datasource_id: str, event_json: str = "{}") -> dict:
+    import json
+    return await TableauClient().publish_hyper_event(datasource_id, json.loads(event_json or "{}"))
+
+
+@router.post("/integrations/powerbi/row")
+async def powerbi_push_row(table_name: str, session_id: str, channel: str = "") -> dict:
+    return await PowerBIClient().push_row(table_name, {"session_id": session_id, "channel": channel})
+
+
+@router.post("/integrations/creatio/lead")
+async def creatio_create_lead(name: str, email: str = "") -> dict:
+    return await CreatioClient().create_lead(name, email)
+
+
+@router.post("/integrations/salesloft/person")
+async def salesloft_create_person(email: str, first_name: str = "", last_name: str = "") -> dict:
+    return await SalesloftClient().create_person(email, first_name, last_name)
+
+
+@router.post("/integrations/sharepoint/item")
+async def sharepoint_add_item(title: str) -> dict:
+    return await SharePointClient().add_list_item(title)
+
+
+@router.post("/integrations/talkdesk/contact")
+async def talkdesk_create_contact(name: str, phone: str, email: str = "") -> dict:
+    return await TalkdeskClient().create_contact(name, phone, email)
+
+
+@router.post("/integrations/ujet/callback")
+async def ujet_schedule_callback(phone: str, reason: str = "") -> dict:
+    return await UjetClient().schedule_callback(phone, reason)
+
+
+@router.post("/integrations/8x8/notify")
+async def eight_by_eight_notify(text: str, title: str = "Nexus") -> dict:
+    return await EightByEightClient().send_notification(text, title)
+
+
+@router.get("/integrations/gusto/employee")
+async def gusto_find_employee(email: str) -> dict:
+    employee = await GustoClient().find_employee(email)
+    return employee or {"found": False}
+
+
+@router.get("/integrations/epic/patient")
+async def epic_patient_summary(patient_id: str) -> dict:
+    return await EpicClient().get_patient_summary(patient_id)

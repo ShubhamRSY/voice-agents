@@ -44,7 +44,7 @@
   <div class="hero">
     <a class="back" href="/">← Back to console</a>
     <h1>Built to work with the tools you use</h1>
-    <p>Connect and scale AI-powered operations across your stack — from CRM and ticketing to telephony and BI. Native connectors ship today; everything else connects via secure webhooks and iPaaS.</p>
+    <p>Connect and scale AI-powered operations across your stack — CRM, ticketing, telephony, BI, HRIS, and more. Every integration in our catalog ships with a native Nexus adapter.</p>
     <div class="stats" id="statsRow"></div>
   </div>
 
@@ -90,12 +90,11 @@
 
     function renderStats() {
       const s = catalog.summary || {};
-      document.getElementById('statsRow').innerHTML = [
-        ['total', 'Integrations listed'],
-        ['native', 'Native connectors'],
-        ['webhook', 'Via webhook / iPaaS'],
-        ['roadmap', 'On roadmap'],
-      ].map(([k, label]) => `<div class="stat"><strong>${s[k] || 0}</strong><span>${label}</span></div>`).join('');
+      const rows = (s.webhook === 0 && s.roadmap === 0)
+        ? [['total', 'Integrations'], ['native', 'Native connectors']]
+        : [['total', 'Integrations listed'], ['native', 'Native connectors'], ['webhook', 'Via webhook / iPaaS'], ['roadmap', 'On roadmap']];
+      document.getElementById('statsRow').innerHTML = rows
+        .map(([k, label]) => `<div class="stat"><strong>${s[k] || 0}</strong><span>${label}</span></div>`).join('');
     }
 
     function renderChips() {

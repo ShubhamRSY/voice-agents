@@ -28,6 +28,31 @@ from src.integrations.zoho_crm import ZohoCRMClient
 from src.integrations.bamboohr import BambooHRClient
 from src.integrations.ringcentral import RingCentralClient
 from src.integrations.confluence import ConfluenceClient
+from src.integrations.dynamics365 import Dynamics365Client
+from src.integrations.copper import CopperClient
+from src.integrations.marketo import MarketoClient
+from src.integrations.klaviyo import KlaviyoClient
+from src.integrations.guru import GuruClient
+from src.integrations.document360 import Document360Client
+from src.integrations.five9 import Five9Client
+from src.integrations.genesys import GenesysClient
+from src.integrations.nice import NiceClient
+from src.integrations.zoom import ZoomClient
+from src.integrations.vonage import VonageClient
+from src.integrations.dialpad import DialpadClient
+from src.integrations.aircall import AircallClient
+from src.integrations.workday import WorkdayClient
+from src.integrations.adp import ADPClient
+from src.integrations.tableau import TableauClient
+from src.integrations.powerbi import PowerBIClient
+from src.integrations.creatio import CreatioClient
+from src.integrations.salesloft import SalesloftClient
+from src.integrations.sharepoint import SharePointClient
+from src.integrations.talkdesk import TalkdeskClient
+from src.integrations.ujet import UjetClient
+from src.integrations.eight_by_eight import EightByEightClient
+from src.integrations.gusto import GustoClient
+from src.integrations.epic import EpicClient
 
 __all__ = [
     "CRMClient",
@@ -57,6 +82,31 @@ __all__ = [
     "BambooHRClient",
     "RingCentralClient",
     "ConfluenceClient",
+    "Dynamics365Client",
+    "CopperClient",
+    "MarketoClient",
+    "KlaviyoClient",
+    "GuruClient",
+    "Document360Client",
+    "Five9Client",
+    "GenesysClient",
+    "NiceClient",
+    "ZoomClient",
+    "VonageClient",
+    "DialpadClient",
+    "AircallClient",
+    "WorkdayClient",
+    "ADPClient",
+    "TableauClient",
+    "PowerBIClient",
+    "CreatioClient",
+    "SalesloftClient",
+    "SharePointClient",
+    "TalkdeskClient",
+    "UjetClient",
+    "EightByEightClient",
+    "GustoClient",
+    "EpicClient",
     "IntegrationRouter",
     "SecretsVault",
     "WebhookDispatcher",
