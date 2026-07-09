@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build a 3-slide LinkedIn deck from Chat / Copilot / Voice screenshots.
+"""Build a 4-slide LinkedIn deck from Chat / Copilot / Voice / Integrations screenshots.
 
 Run capture first:
   python scripts/capture_mode_screenshots.py
@@ -23,6 +23,7 @@ SLIDES = [
     ("01-chat.png", "Chat"),
     ("02-copilot.png", "Copilot"),
     ("03-voice.png", "Voice"),
+    ("04-integrations.png", "62 Integrations"),
 ]
 
 
@@ -41,7 +42,7 @@ def main() -> None:
     # 16:9 widescreen
     prs.slide_width = Inches(13.333)
     prs.slide_height = Inches(7.5)
-    prs.core_properties.title = "Nexus — Chat · Copilot · Voice"
+    prs.core_properties.title = "Nexus — Chat · Copilot · Voice · Integrations"
 
     slide_w = prs.slide_width
     slide_h = prs.slide_height

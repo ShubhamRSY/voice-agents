@@ -10,7 +10,7 @@ Nexus is an omnichannel AI agent platform for customer experience teams — one 
 [![CI](https://github.com/ShubhamRSY/voice-agents/actions/workflows/ci.yml/badge.svg)](https://github.com/ShubhamRSY/voice-agents/actions/workflows/ci.yml)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/downloads/)
 [![License: AGPLv3](https://img.shields.io/badge/License-AGPLv3-blue.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-61%20passing-brightgreen.svg)](tests/)
+[![Tests](https://img.shields.io/badge/tests-215%2B%20passing-brightgreen.svg)](tests/)
 
 </div>
 
@@ -83,7 +83,7 @@ Nexus Cloud is **live** at [/signup](https://yournexus.duckdns.org/signup) — s
 - **Nexus Cloud sign-up** — tenant + admin + subscription + starter KB in ~60s
 - **Legal pages** — `/legal/terms`, `/legal/privacy` (required at sign-up)
 - **Enterprise CX** — inbox, analytics, tickets, workflows, IVR, supervisor tools, customer portal
-- OIDC SSO (Auth0) + JWT auth, encrypted integrations vault, daily backups
+- OIDC SSO (Auth0) + JWT auth, encrypted integrations vault, **62 native connectors** ([`/integrations`](https://yournexus.duckdns.org/integrations)), daily backups
 
 **Enterprise add-ons** (docs + API; contact for dedicated infra)
 
@@ -123,12 +123,21 @@ Nexus is organized around a small set of primitives so you can reason about the 
 
 ## Recent Changes
 
+### v2.5.0 — 62 native integrations + SaaS pricing (July 2026)
+
+| Change | Description |
+|--------|-------------|
+| **62 native integrations** | CRM, ticketing, CCaaS, telephony, BI, HRIS, knowledge, and more — each with vault credentials, status API, and proxy routes |
+| **Integrations catalog** | Public page at [`/integrations`](https://yournexus.duckdns.org/integrations) with search and category filters |
+| **Nexus Cloud pricing** | Free / **$29** Starter / **$99** Growth — see [`docs/saas-hosted.md`](docs/saas-hosted.md) |
+| **QA verified** | 215+ tests passing (unit, integration, E2E with live server); all integration routes return mock-safe responses without credentials |
+
 ### v2.4.0 — Deploy + dark deck (July 2026)
 
 | Change | Description |
 |--------|-------------|
 | **Production deploy** | SaaS, legal, CX/enterprise features on yournexus.duckdns.org |
-| **LinkedIn PPT** | `exports/Nexus_LinkedIn_Launch.pptx` — dark-mode Chat/Copilot/Voice screenshots |
+| **LinkedIn PPT** | `exports/Nexus_LinkedIn_Launch.pptx` — Chat / Copilot / Voice / **62 Integrations** (`scripts/capture_mode_screenshots.py` → `build_linkedin_ppt.py`) |
 | **E2E verified** | Tests passing (unit + integration + live server) |
 
 ### v2.3.2 — Production blockers fixed (July 2026)
@@ -411,7 +420,7 @@ Full architecture → [docs/overview.md](docs/overview.md#architecture).
 
 ### Agent Experience (CX Platform)
 - **Agent inbox** — Human handoff queue with claim, reply, and resolve — hybrid AI + agent model
-- **Ticketing** — Full ticket list with status management; syncs to HubSpot, Zendesk, Jira, ServiceNow
+- **Ticketing** — Full ticket list with status management; syncs to **62 native connectors** (HubSpot, Salesforce, Zendesk, Freshdesk, ServiceNow, Jira, PagerDuty, and more)
 - **Analytics dashboard** — KPIs, avg response time, volume chart, CSAT, NPS, thumbs-up rate, agent scorecard
 - **Workflow automation** — Visual trigger → condition → action flows with runtime execution
 - **Translation** — Auto-detect locale, AI reply in customer language
@@ -429,9 +438,12 @@ Full architecture → [docs/overview.md](docs/overview.md#architecture).
 - **Live streaming** — SSE (`GET /api/v1/chat/sse`) and WebSocket (`ws://.../chat/stream`)
 - **Multi-tenant SaaS** — Sign-up flow, subscription plans, Stripe billing, tenant provisioning
 - **OIDC SSO** — Auth0 integration with JIT provisioning, role mapping, audit logging
-- **Encrypted vault** — AES-256-GCM for API keys and integration credentials at rest
-- **Observability** — Prometheus metrics, Sentry, OpenTelemetry, structured logging
-- **iPaaS webhooks** — Lifecycle events for n8n/Zapier
+
+### Integrations & iPaaS
+- **62 native connectors** — CRM (HubSpot, Salesforce, Pipedrive, Dynamics 365, Zoho, Copper), ticketing (Zendesk, Freshdesk, Help Scout, Front), CCaaS (Five9, Genesys, NiCE, Talkdesk, Amazon Connect), telephony (Twilio, Zoom, Vonage, RingCentral), BI (Snowflake, BigQuery, Tableau, Power BI, Amplitude), HRIS (Workday, BambooHR, ADP, Gusto), project tools (Jira, Asana, Monday, Linear, Azure DevOps), and more
+- **Integrations catalog** — [`GET /integrations`](https://yournexus.duckdns.org/integrations) public UI + `GET /api/v1/integrations/catalog` API
+- **Encrypted vault** — AES-256-GCM for all integration credentials at rest
+- **iPaaS webhooks** — Lifecycle events for n8n/Zapier alongside native adapters
 - **HIPAA readiness** — `HIPAA_MODE` flag, PHI access logging, compliance checklist
 - **Multi-region HA** — Peer health checks, failover config, read replica support
 - **Production infrastructure** — TLS termination (Caddy), PostgreSQL, Redis, automated backups
@@ -563,14 +575,15 @@ Scripts: `scripts/restore-drill.sh` · `scripts/loadtest/k6-smoke.js` · `script
 ### Integrations
 | Method | Endpoint | Description |
 |--------|----------|-------------|
+| GET | `/api/v1/integrations/catalog` | Public catalog (62 native connectors, searchable) |
 | GET | `/api/v1/integrations/status` | Provider connection status |
 | PUT | `/api/v1/integrations/credentials` | Save encrypted credential |
 | DELETE | `/api/v1/integrations/credentials/{key}` | Remove credential |
 | POST | `/api/v1/integrations/webhooks` | Register webhook URL |
 | DELETE | `/api/v1/integrations/webhooks/{type}` | Remove webhook |
-| POST | `/api/v1/integrations/zendesk/ticket` | Create Zendesk ticket |
-| POST | `/api/v1/integrations/servicenow/incident` | Create ServiceNow incident |
-| POST | `/api/v1/integrations/slack/alert` | Send Slack alert |
+| POST | `/api/v1/integrations/{provider}/…` | 55+ provider proxy routes (Zendesk, Salesforce, PagerDuty, Snowflake, Epic, etc.) |
+
+See [`/integrations`](https://yournexus.duckdns.org/integrations) for the full connector list.
 
 ### Customer Portal
 | Method | Endpoint | Description |
@@ -617,6 +630,7 @@ Scripts: `scripts/restore-drill.sh` · `scripts/loadtest/k6-smoke.js` · `script
 |--------|------|-------------|
 | GET | `/` | Agent console (SPA) |
 | GET | `/signup` | SaaS sign-up page |
+| GET | `/integrations` | Integrations catalog (62 native connectors) |
 | GET | `/portal` | Customer self-service portal |
 | GET | `/legal/terms` | Terms of service |
 | GET | `/legal/privacy` | Privacy policy |
@@ -629,10 +643,13 @@ Full reference at `/docs` when the server is running.
 ## Testing
 
 ```bash
-# Unit & integration (server not required)
-pytest tests/ -q --ignore=tests/test_comprehensive_e2e.py
+# Unit & integration (server not required) — 123+ tests
+pytest tests/ -q --ignore=tests/test_comprehensive_e2e.py --ignore=tests/e2e
 
-# Live E2E (requires server on :8001)
+# E2E journeys — 32+ tests
+pytest tests/e2e/ -q
+
+# Live E2E (requires server on :8001) — 60+ tests
 bash scripts/restart_local.sh   # terminal 1
 pytest tests/test_comprehensive_e2e.py -v
 
@@ -643,6 +660,8 @@ bash scripts/ci.sh
 ruff check src/ scripts/
 mypy src/
 ```
+
+**Last QA run (July 2026):** 215+ tests passing; chat, signup, auth, and all 55 integration proxy routes verified on live server (mock mode, no 5xx).
 
 ---
 

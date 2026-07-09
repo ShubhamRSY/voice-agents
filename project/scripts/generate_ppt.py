@@ -3,6 +3,10 @@ from pptx.util import Inches, Pt
 from pptx.dml.color import RGBColor
 from pptx.enum.text import PP_ALIGN
 from pptx.enum.shapes import MSO_SHAPE
+from pathlib import Path
+
+EXPORTS = Path(__file__).resolve().parent.parent / "exports"
+EXPORTS.mkdir(exist_ok=True)
 
 prs = Presentation()
 prs.slide_width = Inches(13.333)
@@ -262,18 +266,17 @@ ui = [
 add_bullets(s, Inches(0.8), Inches(2.2), Inches(11), Inches(4.5),
             ui, size=15, color=DARK_TEXT, spacing=7)
 
-# ════════════════════ SLIDE 11: WEBHOOKS ════════════════════
+# ════════════════════ SLIDE 11: INTEGRATIONS ════════════════════
 s = prs.slides.add_slide(prs.slide_layouts[6])
-slide_header(s, 10, "Integration", "iPaaS Webhooks")
+slide_header(s, 10, "Integration", "62 Native Connectors")
 
 ip = [
-    "Lifecycle event webhooks for n8n, Zapier, and custom automation flows",
-    "Events: session.created, message.completed, feedback.submitted",
-    "Async HTTP dispatch via httpx — non-blocking delivery",
-    "Event history endpoint for debugging and replay",
-    "Connect to CRMs: Salesforce, Zendesk, ServiceNow",
-    "Connect to notifications: Slack, email, and more",
-    "Template workflows included for n8n and Zapier",
+    "62 native integrations — CRM, ticketing, CCaaS, telephony, BI, HRIS, knowledge, and project tools",
+    "Public catalog at /integrations with search and category filters",
+    "Encrypted vault (AES-256-GCM) + status API + 55+ provider proxy routes per connector",
+    "Examples: HubSpot, Salesforce, Zendesk, Freshdesk, PagerDuty, Snowflake, Epic, Workday, Jira",
+    "iPaaS webhooks for n8n/Zapier — lifecycle events alongside native adapters",
+    "Nexus Cloud plans: Free / $29 Starter / $99 Growth with self-serve sign-up",
 ]
 add_bullets(s, Inches(0.8), Inches(2.2), Inches(11), Inches(4.5),
             ip, size=15, color=DARK_TEXT, spacing=8)
@@ -330,8 +333,8 @@ s = prs.slides.add_slide(prs.slide_layouts[6])
 slide_header(s, 13, "Quality", "Testing & CI/CD")
 
 test = [
-    "95+ unit tests covering all routers, services, and LLM providers",
-    "33 comprehensive end-to-end tests simulating real user flows",
+    "215+ tests — unit, integration, E2E journeys, and live comprehensive E2E",
+    "All 55 integration proxy routes verified (mock-safe, no 5xx without credentials)",
     "Mock LLM enables full test coverage without external API keys",
     "Ruff linter and mypy type checking enforced in CI",
     "Coverage reports output to reports/coverage/",
@@ -363,6 +366,6 @@ add_text(s, Inches(0.8), Inches(5.3), Inches(11.5), Inches(0.4),
          "Chat  ·  Copilot  ·  Voice  —  One Orchestrator", size=11, color=RGBColor(0x40, 0x60, 0x80), align=PP_ALIGN.CENTER)
 
 # ════════════════════ SAVE ════════════════════
-path = "Nexus_Overview.pptx"
+path = EXPORTS / "Nexus_Overview.pptx"
 prs.save(path)
 print(f"Saved {path} — 15 slides")

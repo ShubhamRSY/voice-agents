@@ -16,6 +16,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 EXPORTS = ROOT / "exports"
+SHOTS = EXPORTS / "screenshots"
 EXPORTS.mkdir(exist_ok=True)
 
 
@@ -37,12 +38,12 @@ def main() -> None:
     from pptx.util import Inches, Pt
     from pptx.dml.color import RGBColor
 
-    # Screenshots captured during this session (fallback to repo assets if present later).
+    # Screenshots from exports/screenshots (run capture_mode_screenshots.py first).
     images: list[Img] = []
 
     login_img = _first_existing(
         [
-            # Cursor saved images (local dev)
+            SHOTS / "00-login.png",
             Path.home()
             / ".cursor/projects/Users-disastershubz-voice-agents-voice-agents/assets/image-2b57a9b6-9666-4e93-9ab4-fc5db0f6141b.png",
         ]
@@ -52,6 +53,7 @@ def main() -> None:
 
     ui_img = _first_existing(
         [
+            SHOTS / "01-chat.png",
             Path.home()
             / ".cursor/projects/Users-disastershubz-voice-agents-voice-agents/assets/image-4baec4b8-06cf-4b6b-b561-bed0e6f26bf7.png",
             Path.home()
@@ -59,16 +61,22 @@ def main() -> None:
         ]
     )
     if ui_img:
-        images.append(Img(ui_img, "Nexus console UI (chat/cases console)"))
+        images.append(Img(ui_img, "Nexus console UI (chat / copilot / voice)"))
 
     integrations_img = _first_existing(
         [
+            SHOTS / "04-integrations.png",
             Path.home()
             / ".cursor/projects/Users-disastershubz-voice-agents-voice-agents/assets/image-60843011-a065-479f-aa5f-46574e57ddc6.png",
         ]
     )
     if integrations_img:
-        images.append(Img(integrations_img, "Integrations settings (keys stored encrypted server-side)"))
+        images.append(
+            Img(
+                integrations_img,
+                "Integrations catalog — 62 native connectors (CRM, CCaaS, BI, HRIS, and more)",
+            )
+        )
 
     prs = Presentation()
     prs.core_properties.title = "Nexus — Production Deep Dive"
@@ -173,16 +181,26 @@ def main() -> None:
         ],
     )
 
+    add_bullets(
+        "Integrations (62 native connectors)",
+        [
+            "Public catalog at /integrations — searchable by category (CRM, ticketing, CCaaS, BI, HRIS, …)",
+            "Each connector: encrypted vault credentials, status API, and proxy routes",
+            "Examples: HubSpot, Salesforce, Zendesk, Freshdesk, PagerDuty, Snowflake, Epic, Workday",
+            "iPaaS webhooks (n8n/Zapier) alongside native adapters for lifecycle events",
+        ],
+    )
+
     for i, img in enumerate(images):
         add_picture_slide(f"Product UI — Example {i+1}", img)
 
     add_bullets(
         "Why This Helps Industry",
         [
-            "Composable platform: swap LLMs, CRMs, ticketing systems",
-            "Clear security posture: auth-first, admin-only config, audit log",
-            "Operational maturity: backups, systemd, health checks",
-            "Roadmap-ready: Postgres/Redis scale path without redesign",
+            "62 native integrations — CRM, ticketing, telephony, BI, and HRIS out of the box",
+            "Composable platform: swap LLMs, connectors, and automation flows",
+            "Clear security posture: auth-first, encrypted vault, audit log",
+            "Operational maturity: backups, systemd, health checks, 215+ automated tests",
         ],
     )
 

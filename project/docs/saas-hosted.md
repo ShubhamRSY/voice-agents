@@ -48,9 +48,9 @@ Webhook endpoint: `POST /api/v1/saas/webhooks/stripe`
 
 | Plan | Price | API `plan_id` |
 |------|-------|---------------|
-| Starter | $299/mo | `starter` |
-| Professional | $799/mo | `professional` |
-| Enterprise | $2,499/mo | `enterprise` |
+| Free | $0/mo | `free` |
+| Starter | $29/mo | `starter` |
+| Growth | $99/mo | `growth` |
 
 `GET /api/v1/saas/plans` · `GET /api/v1/saas/signup/config`
 

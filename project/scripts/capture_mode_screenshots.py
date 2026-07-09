@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Capture full-page Nexus screenshots for Chat, Copilot, and Voice modes.
+"""Capture full-page Nexus screenshots for Chat, Copilot, Voice, and Integrations.
 
 Requires: pip install playwright && playwright install chromium
 
@@ -111,6 +111,15 @@ def main() -> None:
             path = OUT_DIR / filename
             page.screenshot(path=str(path), full_page=False)
             print(f"Captured {mode} -> {path}")
+
+        # Public integrations catalog (no auth)
+        integrations_url = f"{args.base_url.rstrip('/')}/integrations"
+        page.goto(integrations_url, wait_until="networkidle", timeout=120_000)
+        page.wait_for_selector("#grid, #statsRow, main", timeout=30_000)
+        time.sleep(1.5)
+        integrations_path = OUT_DIR / "04-integrations.png"
+        page.screenshot(path=str(integrations_path), full_page=True)
+        print(f"Captured integrations -> {integrations_path}")
 
         browser.close()
 
