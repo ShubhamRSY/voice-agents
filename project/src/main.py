@@ -211,6 +211,14 @@ async def signup_ui():
     return {"message": "Signup page not found", "api": "/api/v1/saas/signup"}
 
 
+@app.get("/integrations")
+async def integrations_ui():
+    page = STATIC_DIR / "integrations.html"
+    if page.exists():
+        return FileResponse(page, headers={"Cache-Control": "no-cache, must-revalidate"})
+    return {"message": "Integrations page not found", "api": "/api/v1/integrations/catalog"}
+
+
 @app.get("/legal/terms")
 async def legal_terms():
     page = STATIC_DIR / "legal" / "terms.html"

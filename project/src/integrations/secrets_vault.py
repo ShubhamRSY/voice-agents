@@ -39,6 +39,15 @@ CREDENTIAL_KEYS = (
     "notion_api_key",
     "github_token",
     "github_repo",
+    "teams_webhook_url",
+    "pipedrive_api_token",
+    "pipedrive_domain",
+    "snowflake_account",
+    "snowflake_user",
+    "snowflake_password",
+    "snowflake_warehouse",
+    "snowflake_database",
+    "snowflake_schema",
 )
 
 WEBHOOK_EVENTS = (

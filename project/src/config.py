@@ -186,6 +186,21 @@ class Settings(BaseSettings):
     github_token: str = ""
     github_repo: str = ""
 
+    # Microsoft Teams
+    teams_webhook_url: str = ""
+
+    # Pipedrive
+    pipedrive_api_token: str = ""
+    pipedrive_domain: str = ""
+
+    # Snowflake
+    snowflake_account: str = ""
+    snowflake_user: str = ""
+    snowflake_password: str = ""
+    snowflake_warehouse: str = ""
+    snowflake_database: str = ""
+    snowflake_schema: str = "PUBLIC"
+
     # Guest demo sandbox on login screen
     allow_guest_demo: bool = True
 

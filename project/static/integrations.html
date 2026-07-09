@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nexus — Integrations</title>
+  <link rel="stylesheet" href="/static/cx.css" />
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; background: #050508; color: #f4f4f5; margin: 0; min-height: 100vh; }
+    .hero { text-align: center; padding: 2.5rem 1rem 1.5rem; background: linear-gradient(180deg, rgba(56,189,248,0.14), transparent); }
+    .hero h1 { font-size: clamp(1.75rem, 4vw, 2.75rem); margin: 0 0 0.5rem; }
+    .hero p { color: #a1a1aa; max-width: 640px; margin: 0 auto 1rem; line-height: 1.55; }
+    .back { display: inline-block; margin-bottom: 1rem; color: #a1a1aa; text-decoration: none; font-size: 0.9rem; }
+    .back:hover { color: #38bdf8; }
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 0 1rem 3rem; }
+    .stats { display: flex; flex-wrap: wrap; gap: 0.75rem; justify-content: center; margin: 1.25rem 0 2rem; }
+    .stat { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 0.75rem 1rem; min-width: 120px; text-align: center; }
+    .stat strong { display: block; font-size: 1.4rem; color: #38bdf8; }
+    .stat span { font-size: 0.8rem; color: #a1a1aa; }
+    .advantages { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+    .adv { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 1.1rem; }
+    .adv h3 { margin: 0 0 0.4rem; font-size: 1rem; }
+    .adv p { margin: 0; font-size: 0.85rem; color: #a1a1aa; line-height: 1.5; }
+    .toolbar { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1rem; align-items: center; }
+    .toolbar input { flex: 1; min-width: 200px; padding: 0.65rem 0.85rem; border-radius: 10px; border: 1px solid rgba(255,255,255,0.12); background: #0c0c12; color: #fff; font: inherit; }
+    .chips { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+    .chip { padding: 0.4rem 0.75rem; border-radius: 999px; border: 1px solid rgba(255,255,255,0.12); background: transparent; color: #d4d4d8; font-size: 0.8rem; cursor: pointer; }
+    .chip.active { background: rgba(56,189,248,0.15); border-color: #38bdf8; color: #38bdf8; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 0.75rem; }
+    .card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 0.9rem 1rem; }
+    .card h4 { margin: 0 0 0.35rem; font-size: 0.95rem; }
+    .card .meta { font-size: 0.75rem; color: #71717a; margin-bottom: 0.5rem; }
+    .badge { display: inline-block; font-size: 0.68rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; padding: 0.2rem 0.45rem; border-radius: 6px; }
+    .badge-native { background: rgba(52,211,153,0.15); color: #34d399; }
+    .badge-webhook { background: rgba(56,189,248,0.15); color: #38bdf8; }
+    .badge-roadmap { background: rgba(251,191,36,0.12); color: #fbbf24; }
+    .badge-on { background: rgba(52,211,153,0.2); color: #34d399; margin-left: 0.35rem; }
+    .empty { text-align: center; color: #71717a; padding: 2rem; }
+    .cta { text-align: center; margin-top: 2rem; padding: 1.5rem; border-radius: 16px; background: rgba(56,189,248,0.08); border: 1px solid rgba(56,189,248,0.2); }
+    .cta a { color: #38bdf8; font-weight: 600; }
+  </style>
+</head>
+<body>
+  <div class="hero">
+    <a class="back" href="/">← Back to console</a>
+    <h1>Built to work with the tools you use</h1>
+    <p>Connect and scale AI-powered operations across your stack — from CRM and ticketing to telephony and BI. Native connectors ship today; everything else connects via secure webhooks and iPaaS.</p>
+    <div class="stats" id="statsRow"></div>
+  </div>
+
+  <div class="wrap">
+    <div class="advantages">
+      <div class="adv">
+        <h3>Data orchestration</h3>
+        <p>Ingest conversation data and enrich it with CRM context. APIs and webhooks support complex sync at scale.</p>
+      </div>
+      <div class="adv">
+        <h3>Workflow optimization</h3>
+        <p>Route insights, summaries, and sentiment into CRM, BI, and data lakes via native connectors or n8n/Zapier.</p>
+      </div>
+      <div class="adv">
+        <h3>Enterprise-grade security</h3>
+        <p>Encrypted credential vault, signed webhooks, tenant isolation, and HIPAA-ready deployment options.</p>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <input type="search" id="searchInput" placeholder="Search integrations…" aria-label="Search integrations" />
+    </div>
+    <div class="chips" id="categoryChips"></div>
+    <div class="chips" id="tierChips" style="margin: 0.75rem 0 1.25rem"></div>
+    <div class="grid" id="grid"></div>
+    <div class="empty" id="emptyState" hidden>No integrations match your filters.</div>
+
+    <div class="cta">
+      <p>Don't see your system? <a href="mailto:support@nexus-ai-ops.com?subject=Integration%20request">Request a connector</a> — or connect anything today with <a href="/">webhooks in the console</a>.</p>
+      <p style="margin-top:0.75rem"><a href="/signup">Start free trial →</a></p>
+    </div>
+  </div>
+
+  <script>
+    const API = '/api/v1';
+    let catalog = { items: [], category_labels: {}, tier_labels: {}, summary: {} };
+    let category = 'all';
+    let tier = 'all';
+
+    function badgeClass(t) {
+      return t === 'native' ? 'badge-native' : t === 'webhook' ? 'badge-webhook' : 'badge-roadmap';
+    }
+
+    function renderStats() {
+      const s = catalog.summary || {};
+      document.getElementById('statsRow').innerHTML = [
+        ['total', 'Integrations listed'],
+        ['native', 'Native connectors'],
+        ['webhook', 'Via webhook / iPaaS'],
+        ['roadmap', 'On roadmap'],
+      ].map(([k, label]) => `<div class="stat"><strong>${s[k] || 0}</strong><span>${label}</span></div>`).join('');
+    }
+
+    function renderChips() {
+      const catEl = document.getElementById('categoryChips');
+      const cats = [['all', 'All'], ...Object.entries(catalog.category_labels || {})];
+      catEl.innerHTML = cats.map(([id, label]) =>
+        `<button type="button" class="chip${category === id ? ' active' : ''}" data-cat="${id}">${label}</button>`).join('');
+      catEl.querySelectorAll('[data-cat]').forEach((btn) => {
+        btn.addEventListener('click', () => { category = btn.dataset.cat; loadCatalog(); });
+      });
+
+      const tierEl = document.getElementById('tierChips');
+      const tiers = [['all', 'All tiers'], ...Object.entries(catalog.tier_labels || {})];
+      tierEl.innerHTML = tiers.map(([id, label]) =>
+        `<button type="button" class="chip${tier === id ? ' active' : ''}" data-tier="${id}">${label}</button>`).join('');
+      tierEl.querySelectorAll('[data-tier]').forEach((btn) => {
+        btn.addEventListener('click', () => { tier = btn.dataset.tier; loadCatalog(); });
+      });
+    }
+
+    function renderGrid() {
+      const items = catalog.items || [];
+      const grid = document.getElementById('grid');
+      const empty = document.getElementById('emptyState');
+      if (!items.length) {
+        grid.innerHTML = '';
+        empty.hidden = false;
+        return;
+      }
+      empty.hidden = true;
+      grid.innerHTML = items.map((item) => `
+        <div class="card">
+          <h4>${item.name}${item.configured ? '<span class="badge badge-on">Live</span>' : ''}</h4>
+          <div class="meta">${item.category_label}</div>
+          <span class="badge ${badgeClass(item.tier)}">${item.tier_label}</span>
+        </div>`).join('');
+    }
+
+    async function loadCatalog() {
+      const q = document.getElementById('searchInput').value.trim();
+      const params = new URLSearchParams({ category, tier, q });
+      const res = await fetch(`${API}/integrations/catalog?${params}`);
+      catalog = await res.json();
+      renderStats();
+      renderChips();
+      renderGrid();
+    }
+
+    document.getElementById('searchInput').addEventListener('input', () => {
+      clearTimeout(window._searchTimer);
+      window._searchTimer = setTimeout(loadCatalog, 250);
+    });
+
+    loadCatalog();
+  </script>
+</body>
+</html>

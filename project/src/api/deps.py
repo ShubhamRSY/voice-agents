@@ -75,6 +75,15 @@ class CredentialsUpdateRequest(BaseModel):
     notion_api_key: str | None = None
     github_token: str | None = None
     github_repo: str | None = None
+    teams_webhook_url: str | None = None
+    pipedrive_api_token: str | None = None
+    pipedrive_domain: str | None = None
+    snowflake_account: str | None = None
+    snowflake_user: str | None = None
+    snowflake_password: str | None = None
+    snowflake_warehouse: str | None = None
+    snowflake_database: str | None = None
+    snowflake_schema: str | None = None
 
 
 class VoiceSimulateRequest(BaseModel):

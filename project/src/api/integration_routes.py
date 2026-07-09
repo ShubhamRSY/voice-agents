@@ -18,6 +18,10 @@ from src.integrations.asana import AsanaClient
 from src.integrations.monday import MondayClient
 from src.integrations.notion import NotionClient
 from src.integrations.github import GitHubClient
+from src.integrations.teams import TeamsClient
+from src.integrations.pipedrive import PipedriveClient
+from src.integrations.snowflake import SnowflakeClient
+from src.integrations.catalog import CATEGORY_LABELS, TIER_LABELS, catalog_summary, get_catalog
 from src.api.deps import (
     CredentialsUpdateRequest, WebhookRegisterRequest,
     integration_router, require_settings_token, env_credentials,
@@ -25,6 +29,44 @@ from src.api.deps import (
 
 logger = get_logger()
 router = APIRouter()
+
+
+@router.get("/integrations/catalog")
+async def integrations_catalog(
+    category: str = "all",
+    tier: str = "all",
+    q: str = "",
+) -> dict[str, Any]:
+    """Public integration catalog with honest native / webhook / roadmap tiers."""
+    settings = get_settings()
+    providers = (await integrations_status())["providers"]
+    native_configured = {
+        "servicenow": bool(settings.servicenow_instance and settings.servicenow_api_key),
+        "slack": bool(settings.slack_webhook_url),
+    }
+    items = []
+    for item in get_catalog(category=category or None, tier=tier or None, q=q or None):
+        entry = dict(item)
+        provider_key = item.get("provider_key")
+        if provider_key and provider_key in providers:
+            entry["configured"] = bool(providers[provider_key].get("configured"))
+            entry["features"] = providers[provider_key].get("features", [])
+        elif item["id"] in native_configured:
+            entry["configured"] = native_configured[item["id"]]
+        else:
+            entry["configured"] = False
+        items.append(entry)
+    return {
+        "summary": catalog_summary(),
+        "category_labels": CATEGORY_LABELS,
+        "tier_labels": TIER_LABELS,
+        "items": items,
+        "security": {
+            "vault_encryption": True,
+            "webhook_signing": bool(settings.webhook_signing_secret),
+            "hipaa_mode": settings.hipaa_mode,
+        },
+    }
 
 
 @router.get("/integrations/status")
@@ -125,6 +167,24 @@ async def integrations_status() -> dict[str, Any]:
             "github": {
                 "configured": bool(settings.github_token and settings.github_repo),
                 "features": ["issue_sync", "comments"],
+            },
+            "teams": {
+                "configured": bool(settings.teams_webhook_url),
+                "features": ["channel_alerts", "escalations"],
+            },
+            "pipedrive": {
+                "configured": bool(settings.pipedrive_api_token),
+                "features": ["deal_sync", "contact_search"],
+            },
+            "snowflake": {
+                "configured": bool(
+                    settings.snowflake_account
+                    and settings.snowflake_user
+                    and settings.snowflake_password
+                    and settings.snowflake_warehouse
+                    and settings.snowflake_database
+                ),
+                "features": ["sql_execute", "conversation_events"],
             },
             "meta": {
                 "configured": bool(settings.meta_page_access_token),
@@ -263,3 +323,26 @@ async def github_create_issue(title: str, body: str = "", labels: str = "") -> d
     client = GitHubClient()
     label_list = [label.strip() for label in labels.split(",") if label.strip()] if labels else None
     return await client.create_issue(title, body, label_list)
+
+
+@router.post("/integrations/teams/message")
+async def teams_send_message(text: str, title: str = "") -> dict:
+    client = TeamsClient()
+    return await client.send_message(text, title)
+
+
+@router.post("/integrations/pipedrive/deal")
+async def pipedrive_create_deal(title: str, person_id: int | None = None, value: float = 0) -> dict:
+    client = PipedriveClient()
+    return await client.create_deal(title, person_id, value)
+
+
+@router.post("/integrations/snowflake/event")
+async def snowflake_insert_event(
+    session_id: str,
+    channel: str,
+    sentiment: str = "",
+    summary: str = "",
+) -> dict:
+    client = SnowflakeClient()
+    return await client.insert_conversation_event(session_id, channel, sentiment, summary)
