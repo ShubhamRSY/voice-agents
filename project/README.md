@@ -5,12 +5,12 @@
 **Purpose-built AI agents. One CX platform. (Open-source)**  
 
 **[Try live demo →](https://yournexus.duckdns.org/)** — or **[Start Nexus Cloud free trial](https://yournexus.duckdns.org/signup)** (provisions your workspace in ~60s).
-Nexus is an omnichannel AI agent platform for customer experience teams — one orchestrator for **Chat**, **Copilot**, and **Voice**, grounded with **RAG**, protected by **JWT auth + guardrails**, and built for **operations** (streaming, rate limits, logs, backups).
+Nexus is an omnichannel AI agent platform for customer experience teams — one orchestrator for **Chat**, **Copilot**, **Voice**, **Email**, **WhatsApp**, **SMS**, **Messenger**, and **Instagram**, grounded with **RAG**, protected by **JWT auth + guardrails**, and built for **operations** (streaming, rate limits, logs, backups).
 
 [![CI](https://github.com/ShubhamRSY/voice-agents/actions/workflows/ci.yml/badge.svg)](https://github.com/ShubhamRSY/voice-agents/actions/workflows/ci.yml)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/downloads/)
 [![License: AGPLv3](https://img.shields.io/badge/License-AGPLv3-blue.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-216%20passing-brightgreen.svg)](tests/)
+[![Tests](https://img.shields.io/badge/tests-44%20passing-brightgreen.svg)](tests/)
 
 </div>
 
@@ -40,15 +40,20 @@ Nexus is an omnichannel AI agent platform for customer experience teams — one 
 
 Customer experience (CX) teams lose time and accuracy when chat, voice, and internal tooling live in separate silos. Nexus solves this with a single AI-powered runtime that can resolve interactions, assist frontline agents, and improve operations — all from one console and one orchestration engine.
 
-**Three channels, one engine:**
+**Eight channels, one engine:**
 
 | Channel | Purpose |
 |---------|---------|
 | **Chat** | Live AI conversation with SSE streaming, WebSocket streaming, RAG citations, full session history |
 | **Copilot** | Agent-assist — paste a transcript, get an AI-suggested reply |
-| **Voice** | PSTN calls via Twilio, Amazon Connect, or any SIP/CCaaS. Live STT, AI TTS. |
+| **Voice** | PSTN calls via Twilio, Amazon Connect, or any SIP/CCaaS. Live STT, AI TTS |
+| **Email** | SMTP outbound + inbound webhook with AI auto-reply in the customer's language |
+| **WhatsApp** | Two-way messaging via Twilio WhatsApp Business API |
+| **SMS** | Two-way SMS via Twilio Programmable Messaging |
+| **Messenger** | Facebook Messenger via Meta Graph API with AI reply |
+| **Instagram** | Instagram Direct via Meta Graph API with AI reply |
 
-> **No API key required.** Without `OPENAI_API_KEY`, Nexus falls back to a mock LLM — the console, voice simulator, smoke tests, and all 109+ unit tests work immediately.
+> **No API key required.** Without `OPENAI_API_KEY`, Nexus falls back to a mock LLM — the console, voice simulator, smoke tests, and all unit tests work immediately.
 
 **What we do (and how it transforms CX)**
 
@@ -124,7 +129,7 @@ Nexus is organized around a small set of primitives so you can reason about the 
 |--------|-------------|
 | **Production deploy** | SaaS, legal, CX/enterprise features on yournexus.duckdns.org |
 | **LinkedIn PPT** | `exports/Nexus_LinkedIn_Launch.pptx` — dark-mode Chat/Copilot/Voice screenshots |
-| **E2E verified** | 216 tests passing (unit + integration + live server) |
+| **E2E verified** | Tests passing (unit + integration + live server) |
 
 ### v2.3.2 — Production blockers fixed (July 2026)
 
@@ -263,18 +268,21 @@ wscat -c ws://127.0.0.1:8001/api/v1/chat/stream
 
 ## Production Deployment
 
-### Production readiness (pilot)
+### Production readiness
 
 | Area | Status | Notes |
 |------|--------|-------|
-| **Core product** | Ready | Chat, copilot, voice, RAG, admin console |
+| **Core product** | Ready | Chat, copilot, voice, email, WhatsApp, SMS, Messenger, Instagram, RAG, CX platform |
 | **Auth** | Ready | JWT + Auth0 OIDC SSO |
-| **Database** | Ready | **Neon PostgreSQL** in production; SQLite for local dev |
+| **Database** | Ready | Neon PostgreSQL in production; SQLite for local dev |
 | **TLS / edge** | Ready | Caddy + Let's Encrypt |
-| **Backups & DR** | Ready | Daily timer + [restore drill](docs/ops-dr-runbook.md); Neon handles DB backups |
+| **Backups & DR** | Ready | Daily timer + restore drill; Neon handles DB backups |
 | **Monitoring** | Ready | Uptime alerts + in-app observability |
+| **Enterprise CX** | Ready | Agent inbox, analytics, ticketing, workflows, IVR, supervisor, QM, co-browse, customer portal |
+| **SaaS** | Ready | Sign-up flow, subscription plans, Stripe billing, tenant provisioning |
+| **HIPAA readiness** | Ready | HIPAA_MODE flag, PHI logging, compliance checklist |
+| **Multi-region HA** | Ready | Peer health checks, failover config, read replica support |
 | **SOC 2 audit** | Prep only | Checklist + policies — formal audit is future work |
-| **HA / multi-region** | Future | See [HA architecture](docs/ha-multi-region.md) |
 
 **Tier B (paying SMB customers) — optional next:** Redis (Upstash), S3 offsite backups for Chroma/config, custom domain, k6 load test, staging env.
 
@@ -387,17 +395,47 @@ Full architecture → [docs/overview.md](docs/overview.md#architecture).
 
 ## Features
 
-- **Omnichannel** — unified console for chat, copilot, and voice with per-mode message filtering and sync toggle
+### Channels
+- **Chat** — SSE streaming, WebSocket streaming, RAG citations, session history, Markdown rendering
+- **Voice (PSTN)** — Twilio, Amazon Connect, generic SIP/CCaaS with STT/TTS pipeline, call transfer
+- **Email** — SMTP outbound + inbound webhook, AI auto-reply in customer language
+- **WhatsApp / SMS** — Two-way messaging via Twilio Messaging API
+- **Messenger / Instagram** — Meta Graph API integration with webhook verification
+- **Agent Copilot** — paste a transcript, get AI-suggested draft reply, summarization, escalation flags
+
+### AI & Knowledge
 - **Multi-LLM** — OpenAI GPT-4o, Anthropic Claude 3.5, Google Gemini 2.0 — switch per agent
-- **Live streaming** — SSE (`GET /api/v1/chat/sse`) and WebSocket (`ws://.../chat/stream`) deliver tokens word-by-word
-- **RAG citations** — vector-based retrieval augments every response with source-grounded knowledge
-- **Voice (PSTN)** — Twilio, Amazon Connect, generic SIP/CCaaS with STT/TTS pipeline
-- **Feedback engine** — CSAT ratings dynamically tune agent temperature and RAG thresholds
+- **RAG** — Vector-based retrieval (ChromaDB) with citations grounded in your knowledge base
+- **Translation** — Auto-detect locale, translate replies back to customer language
+- **Feedback engine** — CSAT, NPS, thumbs up/down dynamically tune temperature and RAG thresholds
+
+### Agent Experience (CX Platform)
+- **Agent inbox** — Human handoff queue with claim, reply, and resolve — hybrid AI + agent model
+- **Ticketing** — Full ticket list with status management; syncs to HubSpot, Zendesk, Jira, ServiceNow
+- **Analytics dashboard** — KPIs, avg response time, volume chart, CSAT, NPS, thumbs-up rate, agent scorecard
+- **Workflow automation** — Visual trigger → condition → action flows with runtime execution
+- **Translation** — Auto-detect locale, AI reply in customer language
+
+### Enterprise Contact Center
+- **Visual IVR designer** — Drag-style flow builder, stored flows, Twilio execution engine
+- **Supervisor tools** — Monitor, whisper, barge on live sessions
+- **Quality management** — QM review queue, rubric scoring, review workflows
+- **Co-browsing** — WebSocket relay + screen-share hooks for agent assist
+- **Agent presence** — Available/away/break/offline team dashboard with heartbeat
+- **Customer portal** — KB search, ticket submit/track, co-browse initiation
+
+### Developer & Operations
+- **Mobile SDK** — iOS Swift + Android Kotlin + embeddable web widget (`sdk/`)
+- **Live streaming** — SSE (`GET /api/v1/chat/sse`) and WebSocket (`ws://.../chat/stream`)
+- **Multi-tenant SaaS** — Sign-up flow, subscription plans, Stripe billing, tenant provisioning
+- **OIDC SSO** — Auth0 integration with JIT provisioning, role mapping, audit logging
 - **Encrypted vault** — AES-256-GCM for API keys and integration credentials at rest
-- **Session management** — history sidebar, rename, new/clear session
-- **iPaaS webhooks** — lifecycle events for n8n/Zapier
-- **Dark mode UI** — polished frontend with animations, typing indicator, streaming cursor
-- **Production infrastructure** — TLS termination, PostgreSQL, Redis, Sentry, OpenTelemetry, structured logging, automated backups
+- **Observability** — Prometheus metrics, Sentry, OpenTelemetry, structured logging
+- **iPaaS webhooks** — Lifecycle events for n8n/Zapier
+- **HIPAA readiness** — `HIPAA_MODE` flag, PHI access logging, compliance checklist
+- **Multi-region HA** — Peer health checks, failover config, read replica support
+- **Production infrastructure** — TLS termination (Caddy), PostgreSQL, Redis, automated backups
+- **Dark mode UI** — Polished frontend with animations, typing indicator, streaming cursor
 
 ### Enterprise operations (runbooks)
 
@@ -414,14 +452,21 @@ Scripts: `scripts/restore-drill.sh` · `scripts/loadtest/k6-smoke.js` · `script
 
 ## API Overview
 
+### Auth & Identity
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | POST | `/api/v1/auth/register` | Register a new tenant + admin user |
 | POST | `/api/v1/auth/login` | Login, receive JWT |
+| GET | `/api/v1/auth/me` | Current user info |
+| POST | `/api/v1/auth/demo-login` | One-click demo login |
 | GET | `/api/v1/auth/oidc/config` | OIDC SSO enabled flag (public) |
 | GET | `/api/v1/auth/oidc/login` | Start OIDC SSO redirect |
 | GET | `/api/v1/auth/oidc/callback` | OIDC callback (issues JWT) |
-| GET | `/api/v1/auth/me` | Current user info |
+| POST | `/api/v1/admin/users` | Create user (admin) |
+
+### Chat & Copilot
+| Method | Endpoint | Description |
+|--------|----------|-------------|
 | POST | `/api/v1/chat` | Send message, get AI response |
 | GET | `/api/v1/chat/sse` | SSE streaming chat (token-by-token) |
 | WS | `/api/v1/chat/stream` | WebSocket streaming chat |
@@ -429,17 +474,153 @@ Scripts: `scripts/restore-drill.sh` · `scripts/loadtest/k6-smoke.js` · `script
 | DELETE | `/api/v1/chat/{session_id}` | End a session |
 | GET | `/api/v1/sessions/stats` | Active session count |
 | GET | `/api/v1/sessions/{id}/history` | Session message history |
-| POST | `/api/v1/csat` | Submit CSAT rating |
+
+### Voice & Telephony
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/v1/telephony/voice/inbound` | Twilio inbound call webhook |
+| POST | `/api/v1/telephony/voice/process` | Twilio call process/gather |
+| POST | `/api/v1/telephony/voice/status` | Twilio call status callback |
+| POST | `/api/v1/telephony/simulate` | Simulate voice call (dev) |
+| GET | `/api/v1/telephony/voice/stream` | SSE voice stream |
+| POST | `/api/v1/messaging/inbound` | Twilio messaging inbound (WhatsApp/SMS) |
+| POST | `/api/v1/messaging/send` | Send outbound WhatsApp/SMS |
+
+### Knowledge Base & RAG
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/v1/kb/articles` | List KB articles |
+| POST | `/api/v1/kb/articles` | Create KB article |
+| PUT | `/api/v1/kb/articles/{id}` | Update KB article |
+| DELETE | `/api/v1/kb/articles/{id}` | Delete KB article |
+| POST | `/api/v1/kb/upload` | Upload document to KB |
+| POST | `/api/v1/rag/search` | Search knowledge base |
+| POST | `/api/v1/rag/ingest` | Ingest documents into vector store |
+
+### Agent Inbox & Handoff
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/v1/inbox` | List escalated conversations |
+| POST | `/api/v1/inbox/{id}/claim` | Claim a conversation |
+| POST | `/api/v1/inbox/{id}/reply` | Reply as human agent |
+| POST | `/api/v1/inbox/{id}/resolve` | Resolve handoff |
+| POST | `/api/v1/handoff/{session_id}` | Escalate session to human |
+
+### Ticketing
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/v1/tickets` | List tickets |
+| POST | `/api/v1/tickets` | Create ticket |
+| PATCH | `/api/v1/tickets/{id}` | Update ticket status |
+
+### CX Dashboard & Feedback
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/v1/cx/dashboard` | CX analytics dashboard |
+| POST | `/api/v1/csat` | Submit CSAT rating (1-5) |
 | GET | `/api/v1/csat/stats` | CSAT statistics |
-| GET | `/api/v1/agents` | List configured agents |
-| GET | `/api/v1/llm/config` | LLM configuration overview |
+| POST | `/api/v1/nps` | Submit NPS rating (0-10) |
+| GET | `/api/v1/nps/stats` | NPS statistics |
+| POST | `/api/v1/messages/{id}/feedback` | Thumbs up/down feedback |
+
+### Workflows & Automation
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/v1/workflows` | List workflow rules |
+| POST | `/api/v1/workflows` | Create workflow rule |
+| DELETE | `/api/v1/workflows/{id}` | Delete workflow rule |
+
+### Email
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/v1/email/send` | Send email via SMTP |
+| POST | `/api/v1/email/inbound` | Inbound email webhook |
+
+### Meta (Messenger / Instagram)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/v1/meta/webhook` | Meta webhook verification |
+| POST | `/api/v1/meta/webhook` | Meta inbound message webhook |
+
+### Translation
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/v1/translate` | Auto-detect and translate text |
+
+### Enterprise (IVR, Supervisor, QM, Co-browse)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/v1/agents/status` | Update agent presence |
+| GET | `/api/v1/agents/team` | List team presence |
+| GET | `/api/v1/ivr/flows` | List IVR flows |
+| POST | `/api/v1/ivr/flows` | Save IVR flow |
+| POST | `/api/v1/supervisor/action` | Monitor/whisper/barge |
+| GET | `/api/v1/qm/reviews` | List quality reviews |
+| POST | `/api/v1/qm/reviews` | Submit quality review |
+| POST | `/api/v1/cobrowse/start` | Start co-browsing session |
+| WS | `/api/v1/cobrowse/ws/{id}` | Co-browsing WebSocket |
+
+### Integrations
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/v1/integrations/status` | Provider connection status |
+| PUT | `/api/v1/integrations/credentials` | Save encrypted credential |
+| DELETE | `/api/v1/integrations/credentials/{key}` | Remove credential |
+| POST | `/api/v1/integrations/webhooks` | Register webhook URL |
+| DELETE | `/api/v1/integrations/webhooks/{type}` | Remove webhook |
+| POST | `/api/v1/integrations/zendesk/ticket` | Create Zendesk ticket |
+| POST | `/api/v1/integrations/servicenow/incident` | Create ServiceNow incident |
+| POST | `/api/v1/integrations/slack/alert` | Send Slack alert |
+
+### Customer Portal
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/v1/portal/kb/search` | Search knowledge base |
+| POST | `/api/v1/portal/tickets` | Submit support ticket |
+| POST | `/api/v1/portal/tickets/lookup` | Look up ticket status |
+| GET | `/api/v1/portal/tickets/{id}` | Get ticket details |
+| POST | `/api/v1/portal/cobrowse/start` | Start co-browse from portal |
+
+### SaaS / Subscription
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/v1/saas/plans` | List available plans |
+| GET | `/api/v1/saas/subscription` | Current subscription |
+| POST | `/api/v1/saas/subscribe` | Change subscription |
+| POST | `/api/v1/saas/signup` | Sign up new tenant |
+| GET | `/api/v1/saas/signup/config` | Sign-up configuration |
+
+### Observability & Ops
+| Method | Endpoint | Description |
+|--------|----------|-------------|
 | GET | `/api/v1/health` | Health check (no auth) |
 | GET | `/api/v1/metrics` | Prometheus metrics |
-| GET | `/api/v1/observability/health` | Detailed observability status |
-| GET | `/api/v1/analytics/dashboard` | Conversation analytics dashboard |
-| POST | `/api/v1/evaluation/run` | Run agent evaluation suite |
+| GET | `/api/v1/observability/health` | Detailed runtime snapshot |
+| GET | `/api/v1/analytics/dashboard` | Conversation analytics |
+| GET | `/api/v1/analytics/agents` | Agent scorecard |
+| GET | `/api/v1/analytics/timeline` | Hourly volume timeline |
+| GET | `/api/v1/feedback/{agent}/report` | Feedback report |
+| GET | `/api/v1/feedback/{agent}/suggestions` | Improvement suggestions |
+| POST | `/api/v1/events` | Ingest external event |
+| GET | `/api/v1/agents` | List configured agents |
+| GET | `/api/v1/llm/config` | LLM configuration |
+| POST | `/api/v1/evaluation/run` | Run evaluation suite |
 | POST | `/api/v1/demo/reset` | Reset demo data |
-| POST | `/api/v1/events` | Receive external events |
+
+### Multi-region HA
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/v1/ha/status` | HA region health and failover status |
+
+### Frontend Pages
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/` | Agent console (SPA) |
+| GET | `/signup` | SaaS sign-up page |
+| GET | `/portal` | Customer self-service portal |
+| GET | `/legal/terms` | Terms of service |
+| GET | `/legal/privacy` | Privacy policy |
+| GET | `/legal/licensing` | Commercial licensing info |
 
 Full reference at `/docs` when the server is running.
 
@@ -448,12 +629,12 @@ Full reference at `/docs` when the server is running.
 ## Testing
 
 ```bash
-# Unit & integration + live E2E (216 tests; server on :8001 for comprehensive e2e)
-bash scripts/restart_local.sh   # terminal 1
-pytest tests/ -q
+# Unit & integration (server not required)
+pytest tests/ -q --ignore=tests/test_comprehensive_e2e.py
 
-# E2E only (requires running server)
-pytest tests/test_comprehensive_e2e.py tests/e2e/ -v
+# Live E2E (requires server on :8001)
+bash scripts/restart_local.sh   # terminal 1
+pytest tests/test_comprehensive_e2e.py -v
 
 # Full CI pipeline locally
 bash scripts/ci.sh
