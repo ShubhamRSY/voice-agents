@@ -57,8 +57,9 @@ COPY static ./static
 COPY data ./data
 
 RUN groupadd -r appgroup && \
-    useradd -r -g appgroup -u 1000 appuser && \
-    chown -R appuser:appgroup /app
+    useradd -r -g appgroup -u 1000 -d /home/appuser -m appuser && \
+    chown -R appuser:appgroup /app /home/appuser
+ENV HOME=/home/appuser
 USER appuser
 
 EXPOSE 8000

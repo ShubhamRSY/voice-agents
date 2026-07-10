@@ -209,12 +209,23 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
       - name: Smoke test Docker image
         run: |
-          docker run -d -p 8000:8000 --name nexus-test ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-          sleep 5
+          docker run -d -p 8000:8000 --name nexus-test \
+            -e CORS_ORIGINS=http://127.0.0.1:8000,http://localhost:8000 \
+            -e JWT_SECRET=ci-smoke-test-jwt-secret-do-not-use-in-prod \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:8000/api/v1/health > /dev/null 2>&1; then
+              echo "Smoke test passed"
+              docker stop nexus-test && docker rm nexus-test
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Health check failed"
           docker logs nexus-test 2>&1 || true
-          curl -sf http://localhost:8000/api/v1/health || { echo "Health check failed"; docker logs nexus-test; exit 1; }
-          echo "Smoke test passed"
-          docker stop nexus-test && docker rm nexus-test
+          docker stop nexus-test 2>/dev/null || true
+          docker rm nexus-test 2>/dev/null || true
+          exit 1
 
   deploy:
     runs-on: ubuntu-latest
