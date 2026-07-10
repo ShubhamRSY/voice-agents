@@ -93,8 +93,7 @@ services:
       AUTH_REQUIRED: "true"
       DEMO_MODE: "false"
       ALLOW_REGISTRATION: "true"
-      # Default: 2× CPU cores (see deploy/docker/gunicorn.conf.py). Override via .env if needed.
-      GUNICORN_WORKERS: ${GUNICORN_WORKERS:-}
+      # GUNICORN_WORKERS: set in config/environment/.env (compose `environment` overrides env_file)
     depends_on:
       postgres:
         condition: service_healthy
