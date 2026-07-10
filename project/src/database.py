@@ -13,6 +13,7 @@ import structlog
 from contextlib import contextmanager
 
 from src.config import DATA_DIR, get_settings
+from src.db.sql_helpers import build_set_clause
 
 logger = structlog.get_logger()
 
@@ -1118,11 +1119,11 @@ class Database:
         if not updates:
             return None
         updates["updated_at"] = time.time()
-        set_clause = ", ".join(f"{k} = ?" for k in updates)
+        set_clause = build_set_clause(updates.keys(), frozenset(allowed | {"updated_at"}))
         vals = list(updates.values()) + [article_id, tenant_id]
         with get_connection() as conn:
             conn.execute(
-                f"UPDATE knowledge_articles SET {set_clause} WHERE id = ? AND tenant_id = ?",
+                "UPDATE knowledge_articles SET " + set_clause + " WHERE id = ? AND tenant_id = ?",  # nosec B608
                 vals,
             )
             existing = conn.execute(
@@ -1359,10 +1360,10 @@ class Database:
         if not updates:
             return None
         updates["updated_at"] = time.time()
-        set_clause = ", ".join(f"{k} = ?" for k in updates)
+        set_clause = build_set_clause(updates.keys(), frozenset(allowed | {"updated_at"}))
         vals = list(updates.values()) + [ticket_id, tenant_id]
         with get_connection() as conn:
-            conn.execute(f"UPDATE tickets SET {set_clause} WHERE id = ? AND tenant_id = ?", vals)
+            conn.execute("UPDATE tickets SET " + set_clause + " WHERE id = ? AND tenant_id = ?", vals)  # nosec B608
             row = conn.execute("SELECT * FROM tickets WHERE id = ? AND tenant_id = ?", (ticket_id, tenant_id)).fetchone()
             return dict(row) if row else None
 

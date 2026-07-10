@@ -258,16 +258,28 @@ async def _execute_task(task_type: str, params: dict) -> Any:
         return {"evicted_memory": evicted, "deleted_db": deleted}
 
     elif task_type == "ingest_kb_file":
-        from src.rag.ingestion import ingest_file
+        import tempfile
         from pathlib import Path
+
+        from src.rag.ingestion import ingest_file
 
         content = params.get("content", "")
         filename = params.get("filename", "upload.txt")
-        tmp = Path(f"/tmp/nexus_upload_{int(time.time())}_{filename}")
-        tmp.write_text(content)
-        count = ingest_file(tmp)
-        tmp.unlink(missing_ok=True)
-        return {"chunks": count, "source": filename}
+        safe_name = Path(filename).name
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            prefix="nexus_upload_",
+            suffix=f"_{safe_name}",
+            delete=False,
+            encoding="utf-8",
+        ) as tmp_file:
+            tmp_file.write(content)
+            tmp_path = Path(tmp_file.name)
+        try:
+            count = ingest_file(tmp_path)
+        finally:
+            tmp_path.unlink(missing_ok=True)
+        return {"chunks": count, "source": safe_name}
 
     else:
         raise ValueError(f"Unknown task type: {task_type}")

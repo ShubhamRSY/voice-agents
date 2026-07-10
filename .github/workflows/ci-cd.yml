@@ -44,7 +44,7 @@ jobs:
           pip install -e ".[dev]" bandit pip-audit
         working-directory: project
       - name: SAST with bandit
-        run: bandit -r src/ -ll -q
+        run: bandit -c bandit.yaml -r src/ -ll -q
         working-directory: project
       - name: Dependency audit with pip-audit
         run: pip-audit --strict

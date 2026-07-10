@@ -8,6 +8,7 @@ import structlog
 
 from src.config import load_agent_config
 from src.database import get_connection
+from src.db.sql_helpers import build_set_clause
 
 logger = structlog.get_logger()
 
@@ -62,10 +63,12 @@ class FeedbackEngine:
 
         with get_connection() as conn:
             if existing.get("id"):
-                set_clause = ", ".join(f"{k} = ?" for k in merged)
+                update_fields = {k: merged[k] for k in ("enabled", "csat_target", "containment_target", "updated_at")}
+                allowed = frozenset(update_fields)
+                set_clause = build_set_clause(update_fields.keys(), allowed)
                 conn.execute(
-                    f"UPDATE feedback_loop_config SET {set_clause} WHERE id = ?",
-                    [*merged.values(), existing["id"]],
+                    "UPDATE feedback_loop_config SET " + set_clause + " WHERE id = ?",  # nosec B608
+                    [*update_fields.values(), existing["id"]],
                 )
             else:
                 merged["created_at"] = time.time()

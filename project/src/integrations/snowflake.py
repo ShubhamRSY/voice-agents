@@ -46,7 +46,7 @@ class SnowflakeClient:
                 return None
             return resp.json().get("data", {}).get("token")
 
-    async def execute_sql(self, statement: str) -> dict:
+    async def execute_sql(self, statement: str, bindings: dict | None = None) -> dict:
         if not self._is_configured():
             return {"status": "mock_ok", "statement": statement[:120]}
 
@@ -59,12 +59,14 @@ class SnowflakeClient:
             "Content-Type": "application/json",
             "Accept": "application/json",
         }
-        body = {
+        body: dict = {
             "statement": statement,
             "warehouse": self.warehouse,
             "database": self.database,
             "schema": self.schema,
         }
+        if bindings:
+            body["bindings"] = bindings
 
         async with httpx.AsyncClient(timeout=30.0) as client:
             resp = await client.post(f"{self.base_url}/api/v2/statements", json=body, headers=headers)
@@ -85,9 +87,14 @@ class SnowflakeClient:
         sentiment: str = "",
         summary: str = "",
     ) -> dict:
-        safe_summary = summary.replace("'", "''")[:500]
-        sql = (
-            f"INSERT INTO conversation_events (session_id, channel, sentiment, summary) "
-            f"VALUES ('{session_id}', '{channel}', '{sentiment}', '{safe_summary}')"
+        statement = (
+            "INSERT INTO conversation_events (session_id, channel, sentiment, summary) "
+            "VALUES (?, ?, ?, ?)"
         )
-        return await self.execute_sql(sql)
+        bindings = {
+            "1": {"type": "TEXT", "value": session_id},
+            "2": {"type": "TEXT", "value": channel},
+            "3": {"type": "TEXT", "value": sentiment},
+            "4": {"type": "TEXT", "value": summary[:500]},
+        }
+        return await self.execute_sql(statement, bindings=bindings)

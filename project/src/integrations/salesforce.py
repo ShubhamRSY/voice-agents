@@ -7,6 +7,7 @@ import structlog
 
 from src.config import get_settings
 from src.integrations.crm import CRMClient, _mock_customer
+from src.security.soql import contact_lookup_query
 
 logger = structlog.get_logger()
 
@@ -58,12 +59,11 @@ class SalesforceClient(CRMClient):
         if not self._access_token:
             return _mock_customer(identifier)
 
-        is_email = "@" in identifier
-        fields = "Id,Email,FirstName,LastName,Phone"
-        if is_email:
-            query = f"SELECT {fields} FROM Contact WHERE Email = '{identifier}' LIMIT 1"
-        else:
-            query = f"SELECT {fields} FROM Contact WHERE Phone = '{identifier}' LIMIT 1"
+        try:
+            query = contact_lookup_query(identifier)
+        except ValueError:
+            logger.warning("salesforce_invalid_identifier", identifier=identifier[:32])
+            return None
 
         async with httpx.AsyncClient() as client:
             resp = await client.get(

@@ -130,6 +130,8 @@ Nexus is organized around a small set of primitives so you can reason about the 
 | **62 native integrations** | CRM, ticketing, CCaaS, telephony, BI, HRIS, knowledge, and more — each with vault credentials, status API, and proxy routes |
 | **Integrations catalog** | Public page at [`/integrations`](https://yournexus.duckdns.org/integrations) with search and category filters |
 | **Nexus Cloud pricing** | Free / **$29** Starter / **$99** Growth — see [`docs/saas-hosted.md`](docs/saas-hosted.md) |
+| **Production security** | Required `POSTGRES_PASSWORD` / `REDIS_PASSWORD`, CORS wildcard blocked in prod, Redis auth, CI Bandit + pip-audit, staging deploy on `develop` |
+| **LinkedIn deck** | `exports/linkedin/Nexus_LinkedIn_Launch.pdf` — 4K retina screenshots; upload PDF (not PPTX) |
 | **QA verified** | 215+ tests passing (unit, integration, E2E with live server); all integration routes return mock-safe responses without credentials |
 
 ### v2.4.0 — Deploy + dark deck (July 2026)

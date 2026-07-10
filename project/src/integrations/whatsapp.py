@@ -80,7 +80,7 @@ class WhatsAppMessenger:
 
         channel = "whatsapp" if "whatsapp:" in from_number else "sms"
         tenant_id = "default"
-        session_id = f"msg-{hashlib.md5(from_number.encode()).hexdigest()[:12]}"
+        session_id = f"msg-{hashlib.md5(from_number.encode(), usedforsecurity=False).hexdigest()[:12]}"
         locale = detect_locale(body)
 
         logger.info("incoming_message", channel=channel, from_=from_number, body=body[:100])

@@ -1,12 +1,12 @@
 """Parse TwiML responses into UI-friendly JSON."""
 
-import xml.etree.ElementTree as ET
+from defusedxml.ElementTree import ParseError, fromstring
 
 
 def parse_twiml(twiml: str) -> dict:
     try:
-        root = ET.fromstring(twiml)
-    except ET.ParseError:
+        root = fromstring(twiml)
+    except ParseError:
         return {"spoken_responses": [], "transfer_to": None, "listening": False, "actions": []}
 
     spoken: list[str] = []

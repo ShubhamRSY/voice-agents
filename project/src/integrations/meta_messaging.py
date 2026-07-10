@@ -66,7 +66,7 @@ class MetaMessenger:
                 if not body or message.get("is_echo"):
                     continue
 
-                session_id = f"meta-{channel}-{hashlib.md5(sender.encode()).hexdigest()[:10]}"
+                session_id = f"meta-{channel}-{hashlib.md5(sender.encode(), usedforsecurity=False).hexdigest()[:10]}"
                 locale = detect_locale(body)
 
                 if not db.get_session(session_id):

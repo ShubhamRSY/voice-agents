@@ -1,0 +1,7 @@
+# Bandit SAST config — run: bandit -c bandit.yaml -r src/ -ll
+exclude_dirs:
+  - tests
+  - .venv
+skips:
+  # Default bind address for containerized deployments (override via APP_HOST).
+  - B104
