@@ -137,7 +137,7 @@ Nexus is organized around a small set of primitives so you can reason about the 
 | Change | Description |
 |--------|-------------|
 | **Production deploy** | SaaS, legal, CX/enterprise features on yournexus.duckdns.org |
-| **LinkedIn PPT** | `exports/Nexus_LinkedIn_Launch.pptx` — Chat / Copilot / Voice / **62 Integrations** (`scripts/capture_mode_screenshots.py` → `build_linkedin_ppt.py`) |
+| **LinkedIn deck** | `exports/linkedin/Nexus_LinkedIn_Launch.pdf` — upload **PDF** to LinkedIn (not PPTX; PPTX blurs). Build: `capture_mode_screenshots.py` → `build_linkedin_ppt.py` |
 | **E2E verified** | Tests passing (unit + integration + live server) |
 
 ### v2.3.2 — Production blockers fixed (July 2026)

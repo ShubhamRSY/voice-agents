@@ -42,8 +42,18 @@ def main() -> None:
     parser.add_argument("--email", default="")
     parser.add_argument("--password", default="")
     parser.add_argument("--mock-auth", action="store_true", help="Mock /auth/me for UI screenshots")
-    parser.add_argument("--width", type=int, default=1440)
-    parser.add_argument("--height", type=int, default=900)
+    parser.add_argument(
+        "--width",
+        type=int,
+        default=1920,
+        help="Viewport width (default 1920 — matches LinkedIn landscape export)",
+    )
+    parser.add_argument(
+        "--height",
+        type=int,
+        default=1080,
+        help="Viewport height (default 1080)",
+    )
     args = parser.parse_args()
 
     from playwright.sync_api import sync_playwright
@@ -121,7 +131,8 @@ def main() -> None:
         page.wait_for_selector("#grid, #statsRow, main", timeout=30_000)
         time.sleep(1.5)
         integrations_path = OUT_DIR / "04-integrations.png"
-        page.screenshot(path=str(integrations_path), full_page=True)
+        # Viewport capture keeps the same resolution as other slides (full_page blurs on LinkedIn)
+        page.screenshot(path=str(integrations_path), full_page=False)
         print(f"Captured integrations -> {integrations_path}")
 
         browser.close()
