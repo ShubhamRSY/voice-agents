@@ -47,7 +47,9 @@ jobs:
         run: bandit -c bandit.yaml -r src/ -ll -q
         working-directory: project
       - name: Dependency audit with pip-audit
-        run: pip-audit --strict
+        run: |
+          pip freeze | grep -viE '^(enterprise-voice-agents|(-e )?file:)' > /tmp/requirements-audit.txt
+          pip-audit --strict -r /tmp/requirements-audit.txt
         working-directory: project
 
   test:

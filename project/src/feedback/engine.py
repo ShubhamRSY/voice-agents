@@ -63,9 +63,9 @@ class FeedbackEngine:
 
         with get_connection() as conn:
             if existing.get("id"):
-                update_fields = {k: merged[k] for k in ("enabled", "csat_target", "containment_target", "updated_at")}
-                allowed = frozenset(update_fields)
-                set_clause = build_set_clause(update_fields.keys(), allowed)
+                update_cols = frozenset({"enabled", "csat_target", "containment_target", "updated_at"})
+                update_fields = {k: merged[k] for k in update_cols}
+                set_clause = build_set_clause(update_fields.keys(), update_cols)
                 conn.execute(
                     "UPDATE feedback_loop_config SET " + set_clause + " WHERE id = ?",  # nosec B608
                     [*update_fields.values(), existing["id"]],
