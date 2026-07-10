@@ -5,6 +5,7 @@ from __future__ import annotations
 import re
 import time
 import uuid
+from typing import Any
 
 import structlog
 
@@ -13,7 +14,7 @@ from src.database import db
 
 logger = structlog.get_logger()
 
-SAAS_PLANS = [
+SAAS_PLANS: list[dict[str, Any]] = [
     {
         "id": "free",
         "name": "Free",
@@ -92,7 +93,7 @@ def slugify(name: str) -> str:
     return slug[:48] or f"workspace-{uuid.uuid4().hex[:6]}"
 
 
-def get_plan(plan_id: str) -> dict | None:
+def get_plan(plan_id: str) -> dict[str, Any] | None:
     return next((p for p in SAAS_PLANS if p["id"] == plan_id), None)
 
 

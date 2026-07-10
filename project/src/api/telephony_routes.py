@@ -20,7 +20,7 @@ from src.api.deps import (
     _call_router, voice_handler, whatsapp,
     require_auth,
 )
-from src.saas.plan_gates import require_channel
+from src.saas.plan_gates import require_channel_for_context
 
 logger = get_logger()
 router = APIRouter()
@@ -101,7 +101,7 @@ async def speak_agent(request: SpeakRequest, ctx: Any = Depends(require_auth)) -
 
 @router.post("/telephony/simulate")
 async def telephony_simulate(request: VoiceSimulateRequest, ctx: Any = Depends(require_auth)) -> dict[str, Any]:
-    require_channel(ctx.tenant_id, "voice")
+    require_channel_for_context(ctx, "voice")
     sip_meta = _call_router.extract_sip_headers(request.sip_headers)
     metadata = CallMetadata(
         call_sid=request.call_sid,
@@ -192,5 +192,5 @@ async def messaging_inbound(request: Request) -> dict:
 
 @router.post("/messaging/send")
 async def messaging_send(ctx: Any = Depends(require_auth), to: str = "", body: str = "", channel: str = "whatsapp") -> dict:
-    require_channel(ctx.tenant_id, channel)
+    require_channel_for_context(ctx, channel)
     return await whatsapp.send_message(to, body, channel)
