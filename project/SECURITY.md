@@ -69,6 +69,8 @@ Runtime dependencies are pinned in `pyproject.toml`. Review and update regularly
 
 Run `pip install -e ".[dev]"` and `pytest tests/` after upgrading dependencies.
 
+`pip-audit` runs in CI on pinned `pyproject.toml` dependencies. **ChromaDB PYSEC-2026-311** is ignored until a fixed release exists on PyPI — Nexus uses embedded `PersistentClient` (not a public Chroma FastAPI server). Do not expose `CHROMA_SERVER_URL` to the internet without network ACLs.
+
 ## Security-Related Endpoints
 
 | Endpoint | Production behavior |
