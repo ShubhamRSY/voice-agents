@@ -56,7 +56,10 @@ def main() -> None:
 
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
-        page = browser.new_page(viewport={"width": args.width, "height": args.height})
+        page = browser.new_page(
+            viewport={"width": args.width, "height": args.height},
+            device_scale_factor=2,
+        )
 
         if args.mock_auth:
             page.add_init_script("""

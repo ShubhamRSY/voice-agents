@@ -104,11 +104,24 @@ def main() -> None:
         slide = prs.slides.add_slide(prs.slide_layouts[5])  # title only
         slide.shapes.title.text = title
 
-        # Fit image within slide area nicely.
-        left = Inches(0.8)
+        from PIL import Image as PILImage
+
         top = Inches(1.4)
-        height = Inches(5.2)
-        slide.shapes.add_picture(str(img.path), left, top, height=height)
+        max_h = Inches(5.2)
+        max_w = prs.slide_width - Inches(1.6)
+
+        with PILImage.open(img.path) as pil_img:
+            img_w, img_h = pil_img.size
+        aspect = img_w / img_h
+
+        pic_h = max_h
+        pic_w = int(max_h * aspect)
+        if pic_w > max_w:
+            pic_w = max_w
+            pic_h = int(max_w / aspect)
+
+        left = int((prs.slide_width - pic_w) / 2)
+        slide.shapes.add_picture(str(img.path), left, top, width=pic_w, height=pic_h)
 
         # Caption
         tx = slide.shapes.add_textbox(Inches(0.8), Inches(6.7), Inches(12.0), Inches(0.5))

@@ -50,7 +50,24 @@ def main() -> None:
     for filename, label in SLIDES:
         img_path = SHOTS / filename
         slide = prs.slides.add_slide(prs.slide_layouts[6])
-        slide.shapes.add_picture(str(img_path), 0, 0, width=slide_w, height=slide_h)
+        from PIL import Image as PILImage
+
+        with PILImage.open(img_path) as img:
+            img_w, img_h = img.size
+
+        aspect = img_w / img_h
+        slide_aspect = slide_w / slide_h
+
+        if aspect > slide_aspect:
+            pic_w = slide_w
+            pic_h = int(slide_w / aspect)
+        else:
+            pic_h = slide_h
+            pic_w = int(slide_h * aspect)
+
+        left = int((slide_w - pic_w) / 2)
+        top = int((slide_h - pic_h) / 2)
+        slide.shapes.add_picture(str(img_path), left, top, width=pic_w, height=pic_h)
 
     EXPORTS.mkdir(exist_ok=True)
     prs.save(str(OUT))
