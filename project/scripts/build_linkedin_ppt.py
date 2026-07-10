@@ -31,6 +31,8 @@ OUT_PDF = LINKEDIN_DIR / "Nexus_LinkedIn_Launch.pdf"
 LINKEDIN_LANDSCAPE = (1920, 1080)
 LINKEDIN_PORTRAIT = (1080, 1350)
 LINKEDIN_DPI = 150
+MIN_SOURCE_W = 1920
+MIN_SOURCE_H = 1080
 # Nexus dark canvas — matches app chrome so letterboxing is invisible
 BG_RGB = (6, 8, 13)
 
@@ -42,16 +44,32 @@ SLIDES = [
 ]
 
 
+def _sharpen(img):
+    from PIL import ImageFilter
+
+    return img.filter(ImageFilter.UnsharpMask(radius=1.2, percent=130, threshold=2))
+
+
 def render_linkedin_slide(img_path: Path, size: tuple[int, int]):
     from PIL import Image
 
     canvas = Image.new("RGB", size, BG_RGB)
     with Image.open(img_path) as img:
         img = img.convert("RGB")
+        if img.width < MIN_SOURCE_W or img.height < MIN_SOURCE_H:
+            print(
+                f"  WARN {img_path.name} is only {img.width}×{img.height} — "
+                f"re-run capture_mode_screenshots.py for sharp output"
+            )
         scale = min(size[0] / img.width, size[1] / img.height)
+        # Never upscale — upscaling causes blur; only downscale from retina captures
+        scale = min(scale, 1.0)
         new_w = max(1, int(img.width * scale))
         new_h = max(1, int(img.height * scale))
-        resized = img.resize((new_w, new_h), Image.Resampling.LANCZOS)
+        if scale < 1.0:
+            resized = _sharpen(img.resize((new_w, new_h), Image.Resampling.LANCZOS))
+        else:
+            resized = img
         x = (size[0] - new_w) // 2
         y = (size[1] - new_h) // 2
         canvas.paste(resized, (x, y))
@@ -71,28 +89,35 @@ def export_linkedin_images(size: tuple[int, int]) -> list[Path]:
 
 
 def export_linkedin_pdf(png_paths: list[Path]) -> None:
-    from PIL import Image
-
-    images = [Image.open(p) for p in png_paths]
+    # img2pdf embeds PNGs losslessly — PIL PDF recompresses and softens UI text
     try:
-        images[0].save(
-            OUT_PDF,
-            "PDF",
-            save_all=True,
-            append_images=images[1:],
-            resolution=LINKEDIN_DPI,
-        )
-        print(f"  PDF  {OUT_PDF} ({LINKEDIN_DPI} DPI — upload this to LinkedIn)")
-    finally:
-        for img in images:
-            img.close()
+        import img2pdf
+
+        with open(OUT_PDF, "wb") as f:
+            f.write(img2pdf.convert([str(p) for p in png_paths]))
+        print(f"  PDF  {OUT_PDF} (lossless PNG embed — upload this to LinkedIn)")
+    except ImportError:
+        from PIL import Image
+
+        images = [Image.open(p) for p in png_paths]
+        try:
+            images[0].save(
+                OUT_PDF,
+                "PDF",
+                save_all=True,
+                append_images=images[1:],
+                resolution=LINKEDIN_DPI,
+            )
+            print(f"  PDF  {OUT_PDF} ({LINKEDIN_DPI} DPI — install img2pdf for sharper PDF)")
+        finally:
+            for img in images:
+                img.close()
 
 
 def build_pptx(size: tuple[int, int]) -> None:
     from pptx import Presentation
     from pptx.util import Inches
 
-    # Match LinkedIn pixel dimensions at 150 DPI so embedded slides aren't downscaled
     slide_w_in = size[0] / LINKEDIN_DPI
     slide_h_in = size[1] / LINKEDIN_DPI
 

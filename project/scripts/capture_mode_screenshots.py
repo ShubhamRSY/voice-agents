@@ -81,6 +81,15 @@ def main() -> None:
                 localStorage.setItem('nexus_theme', 'dark');
             """)
 
+            def _mock_api(route):
+                route.fulfill(
+                    status=200,
+                    content_type="application/json",
+                    body=json.dumps({}),
+                )
+
+            page.route("**/api/v1/**", _mock_api)
+
             def _mock_me(route):
                 route.fulfill(
                     status=200,
@@ -122,18 +131,26 @@ def main() -> None:
             )
             time.sleep(1.2)
             path = OUT_DIR / filename
-            page.screenshot(path=str(path), full_page=False)
-            print(f"Captured {mode} -> {path}")
+            page.screenshot(path=str(path), full_page=False, type="png")
+            from PIL import Image
+
+            w, h = Image.open(path).size
+            print(f"Captured {mode} -> {path} ({w}×{h})")
 
         # Public integrations catalog (no auth)
         integrations_url = f"{args.base_url.rstrip('/')}/integrations"
+        if args.mock_auth:
+            integrations_url = f"{args.base_url.rstrip('/')}/integrations.html"
         page.goto(integrations_url, wait_until="networkidle", timeout=120_000)
         page.wait_for_selector("#grid, #statsRow, main", timeout=30_000)
         time.sleep(1.5)
         integrations_path = OUT_DIR / "04-integrations.png"
         # Viewport capture keeps the same resolution as other slides (full_page blurs on LinkedIn)
-        page.screenshot(path=str(integrations_path), full_page=False)
-        print(f"Captured integrations -> {integrations_path}")
+        page.screenshot(path=str(integrations_path), full_page=False, type="png")
+        from PIL import Image
+
+        w, h = Image.open(integrations_path).size
+        print(f"Captured integrations -> {integrations_path} ({w}×{h})")
 
         browser.close()
 
