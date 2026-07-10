@@ -6,10 +6,13 @@
 <title>Nexus — AI Ops Console for Customer Experience</title>
 <meta name="description" content="Purpose-built AI agents. One CX platform. 62 native integrations, 8 channels, RAG knowledge layer. Open-source.">
 <meta name="theme-color" content="#030014">
+<link rel="preload" href="/static/landing.css" as="style">
+<link rel="preload" href="/static/screenshots/landing/01-chat-hero.webp" as="image" type="image/webp" fetchpriority="high">
+<link rel="stylesheet" href="/static/landing.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/static/landing.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"></noscript>
 </head>
 <body>
 
@@ -73,7 +76,10 @@
   <div class="hero-preview">
     <div class="hero-preview-glow" aria-hidden="true"></div>
     <div class="hero-preview-frame">
-      <img src="/static/screenshots/01-chat.png" alt="Nexus AI chat console with streaming responses and RAG citations" width="1920" height="1080" fetchpriority="high">
+      <picture>
+        <source srcset="/static/screenshots/landing/01-chat-hero.webp" type="image/webp">
+        <img src="/static/screenshots/landing/01-chat-hero.webp" alt="Nexus AI chat console with streaming responses and RAG citations" width="1200" height="675" fetchpriority="high" decoding="async">
+      </picture>
     </div>
   </div>
 </section>
@@ -245,19 +251,19 @@
       </div>
       <div class="showcase-viewport">
         <div class="showcase-slide active">
-          <img src="/static/screenshots/01-chat.png" alt="Nexus chat interface" loading="lazy">
+          <img data-src="/static/screenshots/landing/01-chat.webp" alt="Nexus chat interface" decoding="async">
           <div class="showcase-caption">Real-time AI chat with knowledge-base citations</div>
         </div>
         <div class="showcase-slide">
-          <img src="/static/screenshots/02-copilot.png" alt="Nexus copilot interface" loading="lazy">
+          <img data-src="/static/screenshots/landing/02-copilot.webp" alt="Nexus copilot interface" decoding="async">
           <div class="showcase-caption">Agent copilot — draft replies from live transcripts</div>
         </div>
         <div class="showcase-slide">
-          <img src="/static/screenshots/03-voice.png" alt="Nexus voice interface" loading="lazy">
+          <img data-src="/static/screenshots/landing/03-voice.webp" alt="Nexus voice interface" decoding="async">
           <div class="showcase-caption">Voice channel with Twilio and Amazon Connect</div>
         </div>
         <div class="showcase-slide">
-          <img src="/static/screenshots/04-integrations.png" alt="Nexus integrations catalog" loading="lazy">
+          <img data-src="/static/screenshots/landing/04-integrations.webp" alt="Nexus integrations catalog" decoding="async">
           <div class="showcase-caption">62 native integrations across CRM, CCaaS, BI &amp; HRIS</div>
         </div>
       </div>

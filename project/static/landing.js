@@ -4,13 +4,26 @@
   const $ = (sel, root = document) => root.querySelector(sel);
   const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
 
-  // ── Spotlight cursor ──
+  // ── Spotlight cursor (throttled, desktop only) ──
   const spotlight = $('#spotlight');
-  if (spotlight && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  const finePointer = window.matchMedia('(pointer: fine)').matches;
+  if (spotlight && finePointer && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    let mx = 0;
+    let my = 0;
+    let scheduled = false;
     document.addEventListener('mousemove', (e) => {
-      spotlight.style.setProperty('--mx', `${e.clientX}px`);
-      spotlight.style.setProperty('--my', `${e.clientY}px`);
-    });
+      mx = e.clientX;
+      my = e.clientY;
+      if (scheduled) return;
+      scheduled = true;
+      requestAnimationFrame(() => {
+        spotlight.style.setProperty('--mx', `${mx}px`);
+        spotlight.style.setProperty('--my', `${my}px`);
+        scheduled = false;
+      });
+    }, { passive: true });
+  } else if (spotlight) {
+    spotlight.style.display = 'none';
   }
 
   // ── Nav scroll state + progress ──
@@ -128,10 +141,19 @@
     });
   });
 
-  // ── Product showcase tabs ──
+  // ── Product showcase tabs + lazy images ──
   const tabs = $$('.showcase-tab');
   const slides = $$('.showcase-slide');
   let autoTab = 0;
+  let tabTimer = null;
+
+  const loadSlideImage = (idx) => {
+    const img = slides[idx]?.querySelector('img[data-src]');
+    if (!img || img.src) return;
+    img.src = img.dataset.src;
+    img.removeAttribute('data-src');
+  };
+
   const setTab = (idx) => {
     tabs.forEach((t, i) => {
       const on = i === idx;
@@ -139,11 +161,24 @@
       t.setAttribute('aria-selected', on ? 'true' : 'false');
     });
     slides.forEach((s, i) => s.classList.toggle('active', i === idx));
+    loadSlideImage(idx);
     autoTab = idx;
   };
+
   tabs.forEach((tab, i) => tab.addEventListener('click', () => setTab(i)));
-  if (tabs.length > 1) {
-    setInterval(() => setTab((autoTab + 1) % tabs.length), 5000);
+
+  const showcaseSection = $('#showcase');
+  if (showcaseSection && slides.length) {
+    const showcaseObs = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((e) => e.isIntersecting)) return;
+        loadSlideImage(0);
+        showcaseObs.disconnect();
+        tabTimer = window.setInterval(() => setTab((autoTab + 1) % tabs.length), 6000);
+      },
+      { rootMargin: '120px' }
+    );
+    showcaseObs.observe(showcaseSection);
   }
 
   // ── Architecture layer explorer ──
@@ -186,9 +221,25 @@
     });
   }
 
-  // ── Duplicate marquee items for seamless loop ──
-  $$('.marquee').forEach((track) => {
-    const items = [...track.children];
-    items.forEach((item) => track.appendChild(item.cloneNode(true)));
-  });
+  // ── Duplicate marquee items when visible ──
+  const initMarquees = () => {
+    $$('.marquee').forEach((track) => {
+      if (track.dataset.cloned) return;
+      track.dataset.cloned = '1';
+      const items = [...track.children];
+      items.forEach((item) => track.appendChild(item.cloneNode(true)));
+    });
+  };
+  const integrationsSection = $('#integrations');
+  if (integrationsSection) {
+    const marqueeObs = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((e) => e.isIntersecting)) return;
+        initMarquees();
+        marqueeObs.disconnect();
+      },
+      { rootMargin: '80px' }
+    );
+    marqueeObs.observe(integrationsSection);
+  }
 })();

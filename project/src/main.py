@@ -13,6 +13,8 @@ from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
+from starlette.responses import Response
+from starlette.types import Scope
 
 from src.api.auth_routes import router as auth_router
 from src.api.oidc_routes import router as oidc_router
@@ -39,6 +41,22 @@ from src.observability import setup_sentry, setup_opentelemetry
 from src.workflows.orchestrator import AgentOrchestrator
 
 STATIC_DIR = ROOT_DIR / "static"
+_CACHEABLE_STATIC_SUFFIXES = (".css", ".js", ".webp", ".png", ".jpg", ".jpeg", ".svg", ".woff2", ".woff")
+
+
+class CachedStaticFiles(StaticFiles):
+    """Serve static assets with long-lived cache headers for repeat visits."""
+
+    async def get_response(self, path: str, scope: Scope) -> Response:
+        response = await super().get_response(path, scope)
+        if (
+            response.status_code == 200
+            and scope.get("method") == "GET"
+            and path.endswith(_CACHEABLE_STATIC_SUFFIXES)
+        ):
+            response.headers["Cache-Control"] = "public, max-age=604800, immutable"
+        return response
+
 
 logger = structlog.get_logger()
 
@@ -112,7 +130,7 @@ app.include_router(portal_router, prefix="/api/v1")
 app.include_router(saas_router, prefix="/api/v1")
 
 if STATIC_DIR.exists():
-    app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+    app.mount("/static", CachedStaticFiles(directory=str(STATIC_DIR)), name="static")
 
 
 # ---------------------------------------------------------------------------
