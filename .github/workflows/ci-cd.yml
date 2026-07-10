@@ -233,12 +233,26 @@ jobs:
     if: github.ref == 'refs/heads/main'
     environment: production
     steps:
+      - name: Verify deploy secrets
+        run: |
+          missing=""
+          [ -z "${{ secrets.DEPLOY_HOST }}" ] && missing="DEPLOY_HOST"
+          [ -z "${{ secrets.DEPLOY_USER }}" ] && missing="${missing:+$missing, }DEPLOY_USER"
+          [ -z "${{ secrets.DEPLOY_SSH_KEY }}" ] && missing="${missing:+$missing, }DEPLOY_SSH_KEY"
+          if [ -n "$missing" ]; then
+            echo "::error::Missing GitHub Actions secrets: $missing"
+            echo "Set them at: Settings → Secrets and variables → Actions"
+            echo "DEPLOY_HOST = VPS public IP or domain (e.g. yournexus.duckdns.org)"
+            exit 1
+          fi
       - name: Deploy to VPS via SSH
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
+          timeout: 120s
+          command_timeout: 10m
           script: |
             export COMPOSE_FILE=/opt/nexus/project/deploy/docker/docker-compose.yml
             cd /opt/nexus/project && git pull
