@@ -42,19 +42,30 @@ from src.workflows.orchestrator import AgentOrchestrator
 
 STATIC_DIR = ROOT_DIR / "static"
 _CACHEABLE_STATIC_SUFFIXES = (".css", ".js", ".webp", ".png", ".jpg", ".jpeg", ".svg", ".woff2", ".woff")
+# Marketing assets change often — do not pin immutable long cache on these paths.
+_MARKETING_STATIC_PREFIXES = (
+    "landing.",
+    "brand-logos.",
+    "nexus-logo.",
+    "contact.",
+    "pricing.",
+    "faq.",
+    "integrations.",
+)
 
 
 class CachedStaticFiles(StaticFiles):
-    """Serve static assets with long-lived cache headers for repeat visits."""
+    """Serve static assets; long cache for hashed assets, short cache for marketing."""
 
     async def get_response(self, path: str, scope: Scope) -> Response:
         response = await super().get_response(path, scope)
-        if (
-            response.status_code == 200
-            and scope.get("method") == "GET"
-            and path.endswith(_CACHEABLE_STATIC_SUFFIXES)
-        ):
-            response.headers["Cache-Control"] = "public, max-age=604800, immutable"
+        if response.status_code != 200 or scope.get("method") != "GET":
+            return response
+        if path.endswith(_CACHEABLE_STATIC_SUFFIXES):
+            if any(path.startswith(p) for p in _MARKETING_STATIC_PREFIXES):
+                response.headers["Cache-Control"] = "public, max-age=300, must-revalidate"
+            else:
+                response.headers["Cache-Control"] = "public, max-age=604800, immutable"
         return response
 
 

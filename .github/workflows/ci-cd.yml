@@ -257,7 +257,7 @@ jobs:
             export COMPOSE_FILE=/opt/nexus/project/deploy/docker/docker-compose.yml
             cd /opt/nexus/project && git pull
             docker compose pull nexus
-            docker compose up -d --no-deps nexus
+            docker compose up -d --no-deps nexus --force-recreate
             docker image prune -f
 
   publish-staging:

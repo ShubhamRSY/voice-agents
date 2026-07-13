@@ -6,8 +6,8 @@
 <title>Nexus — AI Ops Console for Customer Experience</title>
 <meta name="description" content="Nexus Cloud — AI agents for customer experience. Start free. Upgrade for voice, WhatsApp, and 62 integrations.">
 <meta name="theme-color" content="#030014">
-<link rel="preload" href="/static/landing.css" as="style">
-<link rel="stylesheet" href="/static/landing.css?v=3">
+<link rel="preload" href="/static/landing.css?v=4" as="style">
+<link rel="stylesheet" href="/static/landing.css?v=4">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" media="print" onload="this.media='all'">
@@ -28,7 +28,7 @@
 <header class="nav">
   <div class="nav-inner">
     <a href="/landing" class="nav-logo">
-      <img src="/static/nexus-logo.svg?v=2" alt="" width="32" height="32" class="nav-logo-img">
+      <img src="/static/nexus-logo.svg?v=3" alt="" width="32" height="32" class="nav-logo-img">
       Nexus
     </a>
     <nav class="nav-links" aria-label="Primary">
@@ -57,7 +57,7 @@
 <!-- HERO -->
 <section class="hero">
   <div class="brand-masthead reveal visible">
-    <img src="/static/nexus-logo.svg?v=2" alt="" class="brand-logo" width="64" height="64">
+    <img src="/static/nexus-logo.svg?v=3" alt="" class="brand-logo" width="64" height="64">
     <h1 class="brand-name" aria-label="Nexus">
       <span class="brand-letter" style="--i:0">N</span><span class="brand-letter" style="--i:1">e</span><span class="brand-letter" style="--i:2">x</span><span class="brand-letter" style="--i:3">u</span><span class="brand-letter" style="--i:4">s</span>
     </h1>
@@ -207,113 +207,77 @@
 <section id="showcase">
   <div class="wrap">
     <div class="section-head reveal">
-      <div class="section-eyebrow">Interactive demo</div>
+      <div class="section-eyebrow">Platform capabilities</div>
       <h2 class="section-title">What Nexus delivers</h2>
-      <p class="section-sub">Click each capability to see what it does for your CX team — clear explanations, no cramped mockups.</p>
+      <p class="section-sub">Four pillars of modern customer experience — explained clearly, no mock chat windows.</p>
     </div>
-    <div class="showcase reveal">
-      <div class="showcase-tabs" role="tablist" aria-label="Product views">
-        <button class="showcase-tab active" role="tab" aria-selected="true">
-          <span class="showcase-tab-icon">💬</span>
-          <div>
-            <h4>AI Chat</h4>
-            <p>Streaming with RAG citations</p>
-          </div>
-        </button>
-        <button class="showcase-tab" role="tab" aria-selected="false">
-          <span class="showcase-tab-icon">🤖</span>
-          <div>
-            <h4>Agent Copilot</h4>
-            <p>Drafts, summaries, escalations</p>
-          </div>
-        </button>
-        <button class="showcase-tab" role="tab" aria-selected="false">
-          <span class="showcase-tab-icon">📞</span>
-          <div>
-            <h4>Voice</h4>
-            <p>PSTN via Twilio / Connect</p>
-          </div>
-        </button>
-        <button class="showcase-tab" role="tab" aria-selected="false">
-          <span class="showcase-tab-icon">🔌</span>
-          <div>
-            <h4>Integrations</h4>
-            <p>62 connectors, encrypted vault</p>
-          </div>
-        </button>
-      </div>
-      <div class="showcase-viewport" aria-live="polite">
-        <article class="deliver-panel active" data-panel="0" role="tabpanel">
-          <div class="deliver-icon">💬</div>
-          <h3>AI Chat with grounded answers</h3>
-          <p class="deliver-lead">Real-time streaming conversations powered by your knowledge base — every reply can cite the exact source your team trusts.</p>
-          <ul class="deliver-list">
-            <li>SSE &amp; WebSocket streaming for instant responses</li>
-            <li>RAG citations link back to policy docs and KB articles</li>
-            <li>Full session history and handoff to human agents</li>
-            <li>Embeddable widget for web and mobile apps</li>
-          </ul>
-          <div class="deliver-tags"><span>Live streaming</span><span>RAG citations</span><span>Multi-language</span></div>
-        </article>
-        <article class="deliver-panel" data-panel="1" role="tabpanel" hidden>
-          <div class="deliver-icon">🤖</div>
-          <h3>Agent Copilot — assist in the moment</h3>
-          <p class="deliver-lead">Give frontline agents the right words, context, and next steps while the customer is still on the line.</p>
-          <ul class="deliver-list">
-            <li>Draft replies from live transcripts in seconds</li>
-            <li>Summarize long threads before escalation</li>
-            <li>Suggest next-best actions from CRM context</li>
-            <li>Tone-aware responses that match your brand voice</li>
-          </ul>
-          <div class="deliver-tags"><span>Draft assist</span><span>Summaries</span><span>Escalation hints</span></div>
-        </article>
-        <article class="deliver-panel" data-panel="2" role="tabpanel" hidden>
-          <div class="deliver-icon">📞</div>
-          <h3>Voice on real phone lines</h3>
-          <p class="deliver-lead">Customers call your number — Nexus listens, understands, and speaks back with the same intelligence as chat.</p>
-          <ul class="deliver-list">
-            <li>PSTN via Twilio, Amazon Connect, or SIP/CCaaS</li>
-            <li>Live speech-to-text and neural text-to-speech</li>
-            <li>IVR flows, warm transfer, and voicemail capture</li>
-            <li>Same orchestrator and guardrails as digital channels</li>
-          </ul>
-          <div class="deliver-tags"><span>Twilio</span><span>Amazon Connect</span><span>Live STT/TTS</span></div>
-        </article>
-        <article class="deliver-panel" data-panel="3" role="tabpanel" hidden>
-          <div class="deliver-icon">🔌</div>
-          <h3>62 native integrations</h3>
-          <p class="deliver-lead">Connect CRM, ticketing, telephony, BI, and HRIS — credentials stay encrypted in a tenant-isolated vault.</p>
-          <ul class="deliver-list">
-            <li>HubSpot, Salesforce, Zendesk, Twilio, Slack, Jira &amp; more</li>
-            <li>Encrypted credential vault per workspace</li>
-            <li>Signed webhooks and n8n / Zapier bridges</li>
-            <li>Request custom connectors from our team</li>
-          </ul>
-          <div class="deliver-logos" id="showcaseLogoGrid"></div>
-          <div class="deliver-tags"><span>62 connectors</span><span>Encrypted vault</span><span>Enterprise-ready</span></div>
-        </article>
-      </div>
+    <div class="deliver-grid reveal">
+      <article class="deliver-card">
+        <div class="deliver-icon">💬</div>
+        <h3>AI Chat</h3>
+        <p class="deliver-lead">Streaming conversations grounded in your knowledge base, with citations your team can trust.</p>
+        <ul class="deliver-list">
+          <li>SSE &amp; WebSocket real-time replies</li>
+          <li>RAG citations to policy &amp; KB articles</li>
+          <li>Session history &amp; human handoff</li>
+        </ul>
+      </article>
+      <article class="deliver-card">
+        <div class="deliver-icon">🤖</div>
+        <h3>Agent Copilot</h3>
+        <p class="deliver-lead">Assist frontline agents with drafts, summaries, and next-best actions in the moment.</p>
+        <ul class="deliver-list">
+          <li>Transcript-to-draft in seconds</li>
+          <li>Escalation &amp; summary assist</li>
+          <li>CRM-aware suggestions</li>
+        </ul>
+      </article>
+      <article class="deliver-card">
+        <div class="deliver-icon">📞</div>
+        <h3>Voice (PSTN)</h3>
+        <p class="deliver-lead">Real phone lines powered by the same AI brain — Twilio, Amazon Connect, or SIP.</p>
+        <ul class="deliver-list">
+          <li>Live speech-to-text &amp; neural TTS</li>
+          <li>IVR, transfer &amp; voicemail flows</li>
+          <li>Shared guardrails with chat</li>
+        </ul>
+      </article>
+      <article class="deliver-card">
+        <div class="deliver-icon">🔌</div>
+        <h3>62 Integrations</h3>
+        <p class="deliver-lead">Native connectors to CRM, ticketing, telephony, BI &amp; HRIS — encrypted credential vault.</p>
+        <ul class="deliver-list">
+          <li>HubSpot, Salesforce, Zendesk &amp; more</li>
+          <li>Tenant-isolated secrets</li>
+          <li>Webhooks, n8n &amp; Zapier bridges</li>
+        </ul>
+      </article>
     </div>
   </div>
 </section>
 
-<!-- INTEGRATIONS -->
-<section id="integrations" class="integrations-section">
+<!-- INTEGRATIONS LAKE -->
+<section id="integrations" class="integration-lake">
   <div class="wrap">
     <div class="section-head reveal">
       <div class="section-eyebrow">Connect everything</div>
       <h2 class="section-title">62 native integrations</h2>
-      <p class="section-sub">CRM, ticketing, telephony, BI, HRIS, project tools — encrypted vault credentials.</p>
+      <p class="section-sub">Your stack, floating by — two rivers of connectors moving in opposite directions.</p>
     </div>
   </div>
-  <div class="marquee-wrap reveal visible">
-    <div class="marquee" id="logoMarqueeA" aria-hidden="true"></div>
+  <div class="lake-surface" aria-hidden="true"></div>
+  <div class="marquee-wrap lake-row reveal visible">
+    <div class="marquee" id="logoMarqueeA" aria-label="Integration partners row one">
+      <span class="lake-pill">HubSpot</span><span class="lake-pill">Salesforce</span><span class="lake-pill">Zendesk</span><span class="lake-pill">Twilio</span><span class="lake-pill">Slack</span>
+    </div>
   </div>
-  <div class="marquee-wrap reveal visible">
-    <div class="marquee reverse" id="logoMarqueeB" aria-hidden="true"></div>
+  <div class="marquee-wrap lake-row reveal visible">
+    <div class="marquee reverse" id="logoMarqueeB" aria-label="Integration partners row two">
+      <span class="lake-pill">Snowflake</span><span class="lake-pill">Jira</span><span class="lake-pill">Stripe</span><span class="lake-pill">Workday</span><span class="lake-pill">Genesys</span>
+    </div>
   </div>
   <div class="wrap integrations-cta reveal">
-    <a href="/integrations">View all 62 integrations →</a>
+    <a href="/integrations">View full integration catalog →</a>
   </div>
 </section>
 
@@ -464,7 +428,6 @@
   </div>
 </footer>
 
-<script src="/static/brand-logos.js" defer></script>
-<script src="/static/landing.js" defer></script>
+<script src="/static/landing.js?v=4" defer></script>
 </body>
 </html>

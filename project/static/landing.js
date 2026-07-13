@@ -141,41 +141,48 @@
     });
   });
 
-  // ── Product showcase tabs + lazy images ──
-  const tabs = $$('.showcase-tab');
-  const panels = $$('.deliver-panel');
-  let autoTab = 0;
-  let tabTimer = null;
-
-  const setTab = (idx) => {
-    tabs.forEach((t, i) => {
-      const on = i === idx;
-      t.classList.toggle('active', on);
-      t.setAttribute('aria-selected', on ? 'true' : 'false');
-    });
-    panels.forEach((p, i) => {
-      const on = i === idx;
-      p.classList.toggle('active', on);
-      if (on) p.removeAttribute('hidden');
-      else p.setAttribute('hidden', '');
-    });
-    autoTab = idx;
+  // ── Integration floater lake (all 62 names, two opposite rows) ──
+  const namePill = (name) => `<span class="lake-pill">${name}</span>`;
+  const mountMarquee = (id, names) => {
+    const el = document.getElementById(id);
+    if (!el || !names.length) return;
+    el.innerHTML = names.map(namePill).join('');
   };
-
-  tabs.forEach((tab, i) => tab.addEventListener('click', () => setTab(i)));
-
-  const showcaseSection = $('#showcase');
-  if (showcaseSection && panels.length) {
-    const showcaseObs = new IntersectionObserver(
-      (entries) => {
-        if (!entries.some((e) => e.isIntersecting)) return;
-        showcaseObs.disconnect();
-        tabTimer = window.setInterval(() => setTab((autoTab + 1) % tabs.length), 6000);
-      },
-      { rootMargin: '120px' }
-    );
-    showcaseObs.observe(showcaseSection);
-  }
+  const initMarquees = () => {
+    $$('.marquee').forEach((track) => {
+      if (track.dataset.cloned) return;
+      track.dataset.cloned = '1';
+      [...track.children].forEach((item) => track.appendChild(item.cloneNode(true)));
+    });
+  };
+  const bootIntegrationLake = async () => {
+    let names = [];
+    try {
+      const res = await fetch('/api/v1/integrations/catalog?tier=native');
+      if (res.ok) {
+        const data = await res.json();
+        names = (data.items || []).map((i) => i.name).filter(Boolean);
+      }
+    } catch (_) { /* offline / demo */ }
+    if (!names.length) {
+      names = [
+        'HubSpot', 'Salesforce', 'Zendesk', 'Freshworks Freshdesk', 'ServiceNow', 'Intercom',
+        'Slack', 'Atlassian Jira', 'Asana', 'Monday.com', 'GitHub', 'Notion', 'Twilio',
+        'WhatsApp', 'Amazon Connect', 'Meta Messenger / Instagram', 'n8n', 'Zapier', 'Pipedrive',
+        'Microsoft Teams', 'Snowflake', 'PagerDuty', 'Linear', 'Google BigQuery', 'Help Scout',
+        'ClickUp', 'Atlassian Trello', 'Front', 'Amplitude', 'Microsoft Azure DevOps', 'Shopify',
+        'Stripe', 'Mailchimp', 'Zoho CRM', 'BambooHR', 'RingCentral', 'Atlassian Confluence',
+        'Copper', 'Adobe Marketo Engage', 'Klaviyo', 'Guru', 'Document360', 'Five9', 'Genesys',
+        'NiCE', 'Zoom', 'Vonage', 'Dialpad', 'Aircall', 'Workday', 'ADP Workforce Now',
+        'Tableau', 'Microsoft Power BI', 'Microsoft Dynamics 365', 'Creatio', 'Salesloft',
+        'Microsoft SharePoint', 'Talkdesk', 'Ujet', '8x8', 'Gusto', 'Epic',
+      ];
+    }
+    const half = Math.ceil(names.length / 2);
+    mountMarquee('logoMarqueeA', names.slice(0, half));
+    mountMarquee('logoMarqueeB', names.slice(half));
+    initMarquees();
+  };
 
   // ── Architecture layer explorer ──
   const archDetails = {
@@ -217,59 +224,5 @@
     });
   }
 
-  // ── Integration logo marquees ──
-  const MARQUEE_A = [
-    ['hubspot', 'HubSpot'], ['salesforce', 'Salesforce'], ['zendesk', 'Zendesk'],
-    ['freshdesk', 'Freshdesk'], ['pipedrive', 'Pipedrive'], ['zoho', 'Zoho'],
-    ['help-scout', 'Help Scout'], ['front', 'Front'], ['twilio', 'Twilio'],
-    ['amazon-connect', 'Amazon Connect'], ['slack', 'Slack'], ['ringcentral', 'RingCentral'],
-  ];
-  const MARQUEE_B = [
-    ['snowflake', 'Snowflake'], ['bigquery', 'BigQuery'], ['jira', 'Jira'],
-    ['asana', 'Asana'], ['monday', 'Monday'], ['linear', 'Linear'],
-    ['pagerduty', 'PagerDuty'], ['n8n', 'n8n'], ['zapier', 'Zapier'],
-    ['stripe', 'Stripe'], ['shopify', 'Shopify'], ['intercom', 'Intercom'],
-  ];
-  const pillHtml = ([id, name]) => {
-    const img = window.nexusLogoImg?.(id, 22, name) || '';
-    const initial = name.charAt(0);
-    return `<span class="int-pill int-pill--logo">${img}<span class="int-pill-fallback">${initial}</span><span>${name}</span></span>`;
-  };
-  const mountMarquee = (id, items) => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.innerHTML = items.map(pillHtml).join('');
-  };
-  const initMarquees = () => {
-    $$('.marquee').forEach((track) => {
-      if (track.dataset.cloned) return;
-      track.dataset.cloned = '1';
-      const items = [...track.children];
-      items.forEach((item) => track.appendChild(item.cloneNode(true)));
-    });
-  };
-
-  const SHOWCASE_LOGOS = [
-    ['salesforce', 'Salesforce'], ['hubspot', 'HubSpot'], ['zendesk', 'Zendesk'],
-    ['twilio', 'Twilio'], ['slack', 'Slack'], ['jira', 'Jira'],
-    ['snowflake', 'Snowflake'], ['stripe', 'Stripe'],
-  ];
-  const showcaseGrid = document.getElementById('showcaseLogoGrid');
-  if (showcaseGrid) {
-    showcaseGrid.innerHTML = SHOWCASE_LOGOS.map(([id, name]) => {
-      const img = window.nexusLogoImg?.(id, 24, name) || '';
-      return `<span class="deliver-logo-pill">${img}<span class="mock-logo-fallback">${name.charAt(0)}</span>${name}</span>`;
-    }).join('');
-  }
-
-  const bootMarquees = () => {
-    mountMarquee('logoMarqueeA', MARQUEE_A);
-    mountMarquee('logoMarqueeB', MARQUEE_B);
-    initMarquees();
-  };
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', bootMarquees);
-  } else {
-    bootMarquees();
-  }
+  bootIntegrationLake();
 })();

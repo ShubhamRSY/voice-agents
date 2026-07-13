@@ -84,6 +84,7 @@ services:
     volumes:
       - ../../data:/app/data
       - ../../config:/app/config
+      - ../../static:/app/static:ro
     environment:
       DATABASE_URL: postgresql://nexus:${POSTGRES_PASSWORD}@postgres:5432/nexus
       REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0

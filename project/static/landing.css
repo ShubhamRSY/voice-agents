@@ -297,29 +297,59 @@ section{padding:6rem 0}
   font-size:.85rem;font-weight:500;color:var(--fg-muted);
 }
 
-/* ── Marquee integrations ── */
-.integrations-section{
-  background:linear-gradient(180deg,rgba(255,255,255,.02),transparent);
-  overflow:hidden;
+/* ── Integration floater lake ── */
+.integration-lake{
+  position:relative;padding:3rem 0 4rem;overflow:hidden;
+  background:linear-gradient(180deg,rgba(34,211,238,.04),rgba(139,92,246,.06) 50%,transparent);
 }
-.marquee-wrap{mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);margin:1.5rem 0;min-height:52px}
-.marquee{display:flex;gap:1rem;width:max-content;animation:marquee 38s linear infinite;padding:.25rem 0}
+.lake-surface{
+  position:absolute;inset:20% 0 10%;pointer-events:none;
+  background:radial-gradient(ellipse 80% 60% at 50% 50%,rgba(34,211,238,.08),transparent 70%);
+}
+.lake-row{margin:1rem 0;min-height:48px}
+.lake-pill{
+  flex-shrink:0;padding:.55rem 1.15rem;border-radius:999px;
+  font-size:.88rem;font-weight:600;color:var(--fg);
+  background:rgba(255,255,255,.06);border:1px solid rgba(139,92,246,.25);
+  box-shadow:0 4px 20px rgba(0,0,0,.2);
+  white-space:nowrap;
+}
+.lake-pill:hover{border-color:var(--accent-2);color:var(--accent-2)}
+.marquee-wrap{mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent)}
+.marquee{display:flex;gap:1.25rem;width:max-content;animation:marquee 55s linear infinite;padding:.35rem 0}
 .marquee.reverse{animation-direction:reverse}
 .marquee:hover{animation-play-state:paused}
 @keyframes marquee{to{transform:translateX(-50%)}}
-.int-pill{
-  flex-shrink:0;padding:.6rem 1.2rem;border-radius:999px;
-  font-size:.85rem;font-weight:600;color:var(--fg-muted);
-  background:rgba(255,255,255,.04);border:1px solid var(--border);
-  transition:border-color .2s,color .2s,transform .2s;
-}
-.int-pill:hover{border-color:var(--border-hover);color:var(--fg);transform:scale(1.05)}
-.integrations-cta{text-align:center;margin-top:2.5rem}
+.integrations-cta{text-align:center;margin-top:2rem;position:relative;z-index:1}
 .integrations-cta a{
   display:inline-flex;align-items:center;gap:.4rem;font-weight:600;
   color:var(--accent-2);transition:gap .2s;
 }
 .integrations-cta a:hover{gap:.65rem}
+
+/* ── What Nexus delivers — card grid ── */
+.deliver-grid{
+  display:grid;grid-template-columns:repeat(2,1fr);gap:1.25rem;
+}
+.deliver-card{
+  padding:1.75rem;border-radius:var(--radius-lg);
+  background:linear-gradient(145deg,rgba(255,255,255,.05),rgba(255,255,255,.02));
+  border:1px solid var(--border);
+  transition:border-color .3s,transform .3s,box-shadow .3s;
+}
+.deliver-card:hover{
+  border-color:rgba(139,92,246,.35);transform:translateY(-4px);
+  box-shadow:0 20px 48px rgba(0,0,0,.3);
+}
+.deliver-card .deliver-icon{
+  width:48px;height:48px;border-radius:12px;display:grid;place-items:center;
+  font-size:1.35rem;background:rgba(139,92,246,.12);border:1px solid rgba(139,92,246,.25);
+  margin-bottom:1rem;
+}
+.deliver-card h3{font-size:1.15rem;font-weight:800;margin-bottom:.5rem}
+.deliver-card .deliver-lead{font-size:.9rem;color:var(--fg-muted);line-height:1.6;margin-bottom:.75rem}
+.deliver-card .deliver-list{margin:0}
+@media(max-width:768px){.deliver-grid{grid-template-columns:1fr}}
 
 /* ── Tech stack ── */
 .tech-orbit{
