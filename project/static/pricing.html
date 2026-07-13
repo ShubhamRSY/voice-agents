@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Nexus — Plans &amp; Enquiries</title>
 <meta name="description" content="Explore Nexus Cloud plans. Request pricing and features tailored to your team.">
-<link rel="stylesheet" href="/static/landing.css">
+<link rel="stylesheet" href="/static/landing.css?v=7">
 </head>
 <body class="subpage">
 <div class="ambient" aria-hidden="true"><div class="ambient-orb ambient-orb--1"></div><div class="ambient-orb ambient-orb--2"></div></div>
@@ -13,7 +13,7 @@
 
 <header class="nav scrolled">
   <div class="nav-inner">
-    <a href="/landing" class="nav-logo"><img src="/static/nexus-logo.svg?v=2" alt="" width="32" height="32" class="nav-logo-img"> Nexus</a>
+    <a href="/landing" class="nav-logo"><img src="/static/nexus-logo.svg?v=3" alt="" width="32" height="32" class="nav-logo-img"> Nexus</a>
     <nav class="nav-links">
       <a href="/landing">Home</a>
       <a href="/faq">FAQ</a>
@@ -23,28 +23,34 @@
   </div>
 </header>
 
-<main class="wrap" style="padding-top:calc(var(--nav-h) + 2rem)">
-  <div class="brand-masthead reveal visible" style="margin-bottom:2rem">
-    <p class="brand-name">Nexus</p>
+<main class="wrap" style="padding-top:calc(var(--nav-h) + 2rem);padding-bottom:4rem">
+  <div class="brand-masthead reveal visible" style="margin-bottom:2.5rem">
+    <img src="/static/nexus-logo.svg?v=3" alt="" class="brand-logo" width="56" height="56">
+    <h1 class="brand-name" aria-label="Nexus">
+      <span class="brand-letter" style="--i:0">N</span><span class="brand-letter" style="--i:1">e</span><span class="brand-letter" style="--i:2">x</span><span class="brand-letter" style="--i:3">u</span><span class="brand-letter" style="--i:4">s</span>
+    </h1>
     <p class="brand-tagline">Every conversation deserves to feel human.</p>
+    <p class="brand-promise">Exact limits per plan — request a quote when you need voice, WhatsApp, or full integration coverage.</p>
   </div>
+
   <div class="section-head reveal visible">
     <div class="section-eyebrow">Nexus Cloud</div>
-    <h1 class="section-title">Plans built for your team</h1>
-    <p class="section-sub">Pricing is not listed publicly — <strong>request a quote</strong> and we’ll recommend the right plan for your channels, agents, and integrations.</p>
+    <h2 class="section-title">Plans built for your team</h2>
+    <p class="section-sub">Dollar pricing is not listed publicly — <strong>request a quote</strong>. Numbers below match what each plan includes.</p>
   </div>
 
   <div class="pricing-grid reveal visible">
     <div class="pricing-card">
       <h3>Free</h3>
-      <div class="pricing-amount enquire">Try Nexus</div>
+      <div class="pricing-amount enquire">$0 / mo</div>
       <p class="pricing-sub">Get started at no cost</p>
       <ul class="pricing-list">
-        <li>2 AI agents</li>
-        <li>Chat + Email</li>
-        <li>Core integrations</li>
-        <li>Community support</li>
+        <li><span class="plan-qty">2</span> AI agents</li>
+        <li><span class="plan-qty">2</span> channels — Chat &amp; Email</li>
+        <li><span class="plan-qty">5</span> integrations</li>
+        <li><span class="plan-qty">0</span> credit card required</li>
       </ul>
+      <p class="pricing-locked">Locked: Voice, WhatsApp, SMS, social</p>
       <a href="/signup" class="btn btn-ghost pricing-btn">Start free</a>
     </div>
     <div class="pricing-card">
@@ -52,11 +58,12 @@
       <div class="pricing-amount enquire">Request pricing</div>
       <p class="pricing-sub">Growing CX teams</p>
       <ul class="pricing-list">
-        <li>More AI agents</li>
-        <li>Chat, Voice &amp; Email</li>
-        <li>Expanded integrations</li>
-        <li>Email support</li>
+        <li><span class="plan-qty">10</span> AI agents</li>
+        <li><span class="plan-qty">3</span> channels — Chat, Voice &amp; Email</li>
+        <li><span class="plan-qty">20</span> integrations</li>
+        <li><span class="plan-qty">14</span> day trial</li>
       </ul>
+      <p class="pricing-locked">Locked: WhatsApp, SMS, social</p>
       <a href="/contact?plan=starter" class="btn btn-ghost pricing-btn">Enquire →</a>
     </div>
     <div class="pricing-card featured">
@@ -64,10 +71,10 @@
       <div class="pricing-amount enquire accent">Request pricing</div>
       <p class="pricing-sub">Omnichannel at scale</p>
       <ul class="pricing-list">
-        <li>High agent limits</li>
-        <li>Voice, WhatsApp, SMS</li>
-        <li>Full integration catalog</li>
-        <li>Priority support</li>
+        <li><span class="plan-qty">50</span> AI agents</li>
+        <li><span class="plan-qty">5</span> channels — + WhatsApp &amp; SMS</li>
+        <li><span class="plan-qty">62</span> native integrations</li>
+        <li><span class="plan-qty">14</span> day trial · priority support</li>
       </ul>
       <a href="/contact?plan=growth" class="btn btn-primary pricing-btn">Enquire →</a>
     </div>
@@ -76,10 +83,10 @@
       <div class="pricing-amount enquire warm">Custom quote</div>
       <p class="pricing-sub">SSO, compliance, private cloud</p>
       <ul class="pricing-list">
-        <li>Unlimited scale</li>
-        <li>All 8 channels</li>
-        <li>Dedicated support &amp; SLA</li>
-        <li>Self-host option</li>
+        <li><span class="plan-qty">999+</span> AI agents</li>
+        <li><span class="plan-qty">8</span> channels — all omnichannel</li>
+        <li><span class="plan-qty">62</span> integrations + custom</li>
+        <li><span class="plan-qty">1</span> dedicated SLA &amp; SSO</li>
       </ul>
       <a href="/contact?plan=enterprise" class="btn btn-ghost pricing-btn">Enquire →</a>
     </div>

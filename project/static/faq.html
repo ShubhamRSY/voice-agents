@@ -5,15 +5,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Nexus — FAQ</title>
 <meta name="description" content="Frequently asked questions about Nexus Cloud pricing, features, and support.">
-<link rel="stylesheet" href="/static/landing.css">
+<link rel="stylesheet" href="/static/landing.css?v=7">
 </head>
 <body class="subpage">
-<div class="ambient" aria-hidden="true"><div class="ambient-orb ambient-orb--1"></div></div>
+<div class="ambient" aria-hidden="true"><div class="ambient-orb ambient-orb--1"></div><div class="ambient-orb ambient-orb--2"></div></div>
 <div class="grid-overlay" aria-hidden="true"></div>
 
 <header class="nav scrolled">
   <div class="nav-inner">
-    <a href="/landing" class="nav-logo"><img src="/static/nexus-logo.svg?v=2" alt="" width="32" height="32" class="nav-logo-img"> Nexus</a>
+    <a href="/landing" class="nav-logo"><img src="/static/nexus-logo.svg?v=3" alt="" width="32" height="32" class="nav-logo-img"> Nexus</a>
     <nav class="nav-links">
       <a href="/landing">Home</a>
       <a href="/pricing">Plans</a>
@@ -24,47 +24,98 @@
 </header>
 
 <main class="wrap" style="padding-top:calc(var(--nav-h) + 2rem);padding-bottom:4rem">
-  <div class="brand-masthead reveal visible" style="margin-bottom:2rem">
-    <p class="brand-name">Nexus</p>
+  <div class="brand-masthead reveal visible" style="margin-bottom:2.5rem">
+    <img src="/static/nexus-logo.svg?v=3" alt="" class="brand-logo" width="56" height="56">
+    <h1 class="brand-name" aria-label="Nexus">
+      <span class="brand-letter" style="--i:0">N</span><span class="brand-letter" style="--i:1">e</span><span class="brand-letter" style="--i:2">x</span><span class="brand-letter" style="--i:3">u</span><span class="brand-letter" style="--i:4">s</span>
+    </h1>
     <p class="brand-tagline">Every conversation deserves to feel human.</p>
+    <p class="brand-promise">Answers about plans, privacy, and support — so you know exactly what you get on Free vs Nexus Cloud.</p>
   </div>
-  <div class="section-head reveal visible">
+
+  <div class="section-head reveal visible" style="margin-bottom:2rem">
     <div class="section-eyebrow">Help center</div>
-    <h1 class="section-title">Frequently asked questions</h1>
+    <h2 class="section-title">Frequently asked questions</h2>
+  </div>
+
+  <div class="plan-compare reveal visible">
+    <div class="plan-compare-card">
+      <h3>Free</h3>
+      <p class="plan-tier">$0/month · instant sign-up · no card</p>
+      <ul class="plan-spec-list">
+        <li><span class="plan-qty">2</span> AI agents</li>
+        <li><span class="plan-qty">2</span> channels — Chat &amp; Email</li>
+        <li><span class="plan-qty">5</span> integrations</li>
+        <li><span class="plan-qty">∞</span> community support</li>
+      </ul>
+    </div>
+    <div class="plan-compare-card plan-compare-card--hosted">
+      <h3>Nexus Cloud (hosted)</h3>
+      <p class="plan-tier">Starter &amp; Growth · request pricing</p>
+      <ul class="plan-spec-list">
+        <li><span class="plan-qty">10–50</span> AI agents</li>
+        <li><span class="plan-qty">3–5</span> channels — adds Voice, WhatsApp &amp; SMS</li>
+        <li><span class="plan-qty">20–62</span> native integrations</li>
+        <li><span class="plan-qty">14</span> day trial on paid tiers</li>
+      </ul>
+    </div>
   </div>
 
   <div class="faq-list">
     <details class="faq-item reveal visible" open>
       <summary>Is Nexus open source?</summary>
-      <p>No. Nexus is <strong>proprietary software</strong> operated as a hosted service (Nexus Cloud). Source code is not publicly licensed for redistribution. Enterprise customers may negotiate private deployment terms.</p>
+      <div class="faq-body">
+        <p>No. Nexus is <strong>proprietary software</strong> operated as a hosted service (Nexus Cloud). Source code is not publicly licensed for redistribution. Enterprise customers may negotiate private deployment terms.</p>
+      </div>
     </details>
     <details class="faq-item reveal visible">
       <summary>Can I use Nexus for free?</summary>
-      <p>Yes. The <strong>Free</strong> plan includes 2 AI agents, chat, email, and 5 integrations at $0/month. Voice, WhatsApp, SMS, and social channels require a paid plan.</p>
+      <div class="faq-body">
+        <p>Yes. The <strong>Free</strong> plan is $0/month with no credit card:</p>
+        <ul class="plan-spec-list">
+          <li><span class="plan-qty">2</span> AI agents</li>
+          <li><span class="plan-qty">2</span> channels — Chat &amp; Email</li>
+          <li><span class="plan-qty">5</span> integrations</li>
+          <li><span class="plan-qty">0</span> setup fee — workspace in minutes</li>
+        </ul>
+        <p>Voice, WhatsApp, SMS, and social channels require a paid Nexus Cloud plan. <a href="/signup">Start free →</a></p>
+      </div>
     </details>
     <details class="faq-item reveal visible">
       <summary>What happens when I hit a paid feature on the Free plan?</summary>
-      <p>Locked channels (e.g. Voice, WhatsApp) require a paid plan. <a href="/contact">Send an enquiry</a> to request pricing and access.</p>
+      <div class="faq-body">
+        <p>Locked channels (Voice, WhatsApp, SMS, Messenger, Instagram) return an upgrade prompt — your workspace stays intact. Connect up to <strong>5 integrations</strong> on Free; paid tiers unlock <strong>20</strong> (Starter) or <strong>62</strong> (Growth). <a href="/contact">Send an enquiry</a> to request pricing.</p>
+      </div>
     </details>
     <details class="faq-item reveal visible">
       <summary>How does billing work?</summary>
-      <p>We don’t publish prices on the website. <a href="/contact">Request a quote</a> and we’ll share plan options for your team. The <strong>Free</strong> tier is available instantly via <a href="/signup">sign-up</a> — no card required.</p>
+      <div class="faq-body">
+        <p>We don’t publish dollar amounts on the website. <a href="/contact">Request a quote</a> and we’ll share Starter vs Growth options for your team. The <strong>Free</strong> tier is available instantly via <a href="/signup">sign-up</a> — no card required. Paid plans include a <strong>14-day</strong> trial.</p>
+      </div>
     </details>
     <details class="faq-item reveal visible">
       <summary>Can I self-host Nexus?</summary>
-      <p>Self-hosting and private cloud are available on <strong>Enterprise</strong> plans. <a href="/contact">Contact us</a> for licensing and deployment.</p>
+      <div class="faq-body">
+        <p>Self-hosting and private cloud are available on <strong>Enterprise</strong> — up to <strong>999+</strong> agents, all <strong>8</strong> channels, and <strong>62</strong> integrations with SSO and compliance paths. <a href="/contact?plan=enterprise">Contact us</a> for licensing and deployment.</p>
+      </div>
     </details>
     <details class="faq-item reveal visible">
       <summary>How do I contact support?</summary>
-      <p>Email <a href="mailto:yedekarshubham7188@gmail.com?subject=Nexus%20Support">hello@nexus.com</a> or use the <a href="/contact">enquiry form</a>. All messages are delivered to our team inbox.</p>
+      <div class="faq-body">
+        <p>Email <a href="mailto:yedekarshubham7188@gmail.com?subject=Nexus%20Support">hello@nexus.com</a> or use the <a href="/contact">enquiry form</a>. All messages are delivered to our team inbox. Free includes community support; paid tiers add email or priority response.</p>
+      </div>
     </details>
     <details class="faq-item reveal visible">
       <summary>Can I use hello@nexus.com?</summary>
-      <p>Public contact is listed as <strong>hello@nexus.com</strong>. To receive mail at your own domain (e.g. @nexus.com), purchase the domain and set up email forwarding (e.g. Cloudflare Email Routing) to your inbox. Until then, use the contact link above.</p>
+      <div class="faq-body">
+        <p>Public contact is listed as <strong>hello@nexus.com</strong>. To receive mail at your own domain (e.g. @nexus.com), purchase the domain and set up email forwarding (e.g. Cloudflare Email Routing) to your inbox. Until then, use the contact link above.</p>
+      </div>
     </details>
     <details class="faq-item reveal visible">
       <summary>Where is my data stored?</summary>
-      <p>Nexus Cloud runs on your operator's infrastructure (e.g. PostgreSQL, Redis, encrypted integration vault). See our <a href="/legal/privacy">Privacy Policy</a> for details.</p>
+      <div class="faq-body">
+        <p>Nexus Cloud runs on your operator's infrastructure (e.g. PostgreSQL, Redis, encrypted integration vault). See our <a href="/legal/privacy">Privacy Policy</a> for details.</p>
+      </div>
     </details>
   </div>
 </main>
