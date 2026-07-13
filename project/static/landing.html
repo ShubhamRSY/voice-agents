@@ -6,8 +6,16 @@
 <title>Nexus — AI Ops Console for Customer Experience</title>
 <meta name="description" content="Nexus Cloud — AI agents for customer experience. Start free. Upgrade for voice, WhatsApp, and 62 integrations.">
 <meta name="theme-color" content="#030014">
-<link rel="preload" href="/static/landing.css?v=4" as="style">
-<link rel="stylesheet" href="/static/landing.css?v=4">
+<link rel="preload" href="/static/landing.css?v=5" as="style">
+<link rel="stylesheet" href="/static/landing.css?v=5">
+<style>
+  /* Integration lake — works even if external CSS is cached */
+  .integration-lake .marquee-wrap{overflow:hidden;width:100%;-webkit-mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent);mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent)}
+  .integration-lake .marquee{display:flex;gap:1.25rem;width:max-content;animation:lake-scroll 50s linear infinite;padding:.5rem 0}
+  .integration-lake .marquee.reverse{animation-direction:reverse}
+  .integration-lake .lake-pill{flex-shrink:0;padding:.55rem 1.15rem;border-radius:999px;font-size:.88rem;font-weight:600;color:#f4f4f8;background:rgba(255,255,255,.07);border:1px solid rgba(139,92,246,.3);white-space:nowrap}
+  @keyframes lake-scroll{to{transform:translateX(-50%)}}
+</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" media="print" onload="this.media='all'">
@@ -266,14 +274,14 @@
     </div>
   </div>
   <div class="lake-surface" aria-hidden="true"></div>
-  <div class="marquee-wrap lake-row reveal visible">
+  <div class="marquee-wrap lake-row">
     <div class="marquee" id="logoMarqueeA" aria-label="Integration partners row one">
-      <span class="lake-pill">HubSpot</span><span class="lake-pill">Salesforce</span><span class="lake-pill">Zendesk</span><span class="lake-pill">Twilio</span><span class="lake-pill">Slack</span>
+      <span class="lake-pill">HubSpot</span><span class="lake-pill">Salesforce</span><span class="lake-pill">Zendesk</span><span class="lake-pill">Freshworks Freshdesk</span><span class="lake-pill">ServiceNow</span><span class="lake-pill">Intercom</span><span class="lake-pill">Slack</span><span class="lake-pill">Atlassian Jira</span><span class="lake-pill">Asana</span><span class="lake-pill">Monday.com</span><span class="lake-pill">GitHub</span><span class="lake-pill">Notion</span><span class="lake-pill">Twilio</span><span class="lake-pill">WhatsApp</span><span class="lake-pill">Amazon Connect</span><span class="lake-pill">Meta Messenger / Instagram</span><span class="lake-pill">n8n</span><span class="lake-pill">Zapier</span><span class="lake-pill">Pipedrive</span><span class="lake-pill">Microsoft Teams</span><span class="lake-pill">Snowflake</span><span class="lake-pill">PagerDuty</span><span class="lake-pill">Linear</span><span class="lake-pill">Google BigQuery</span><span class="lake-pill">Help Scout</span><span class="lake-pill">ClickUp</span><span class="lake-pill">Atlassian Trello</span><span class="lake-pill">Front</span><span class="lake-pill">Amplitude</span><span class="lake-pill">Microsoft Azure DevOps</span><span class="lake-pill">Shopify</span><span class="lake-pill">HubSpot</span><span class="lake-pill">Salesforce</span><span class="lake-pill">Zendesk</span><span class="lake-pill">Freshworks Freshdesk</span><span class="lake-pill">ServiceNow</span><span class="lake-pill">Intercom</span><span class="lake-pill">Slack</span><span class="lake-pill">Atlassian Jira</span><span class="lake-pill">Asana</span><span class="lake-pill">Monday.com</span><span class="lake-pill">GitHub</span><span class="lake-pill">Notion</span><span class="lake-pill">Twilio</span><span class="lake-pill">WhatsApp</span><span class="lake-pill">Amazon Connect</span><span class="lake-pill">Meta Messenger / Instagram</span><span class="lake-pill">n8n</span><span class="lake-pill">Zapier</span><span class="lake-pill">Pipedrive</span><span class="lake-pill">Microsoft Teams</span><span class="lake-pill">Snowflake</span><span class="lake-pill">PagerDuty</span><span class="lake-pill">Linear</span><span class="lake-pill">Google BigQuery</span><span class="lake-pill">Help Scout</span><span class="lake-pill">ClickUp</span><span class="lake-pill">Atlassian Trello</span><span class="lake-pill">Front</span><span class="lake-pill">Amplitude</span><span class="lake-pill">Microsoft Azure DevOps</span><span class="lake-pill">Shopify</span>
     </div>
   </div>
-  <div class="marquee-wrap lake-row reveal visible">
+  <div class="marquee-wrap lake-row">
     <div class="marquee reverse" id="logoMarqueeB" aria-label="Integration partners row two">
-      <span class="lake-pill">Snowflake</span><span class="lake-pill">Jira</span><span class="lake-pill">Stripe</span><span class="lake-pill">Workday</span><span class="lake-pill">Genesys</span>
+      <span class="lake-pill">Stripe</span><span class="lake-pill">Mailchimp</span><span class="lake-pill">Zoho CRM</span><span class="lake-pill">BambooHR</span><span class="lake-pill">RingCentral</span><span class="lake-pill">Atlassian Confluence</span><span class="lake-pill">Copper</span><span class="lake-pill">Adobe Marketo Engage</span><span class="lake-pill">Klaviyo</span><span class="lake-pill">Guru</span><span class="lake-pill">Document360</span><span class="lake-pill">Five9</span><span class="lake-pill">Genesys</span><span class="lake-pill">NiCE</span><span class="lake-pill">Zoom</span><span class="lake-pill">Vonage</span><span class="lake-pill">Dialpad</span><span class="lake-pill">Aircall</span><span class="lake-pill">Workday</span><span class="lake-pill">ADP Workforce Now</span><span class="lake-pill">Tableau</span><span class="lake-pill">Microsoft Power BI</span><span class="lake-pill">Microsoft Dynamics 365</span><span class="lake-pill">Creatio</span><span class="lake-pill">Salesloft</span><span class="lake-pill">Microsoft SharePoint</span><span class="lake-pill">Talkdesk</span><span class="lake-pill">Ujet</span><span class="lake-pill">8x8</span><span class="lake-pill">Gusto</span><span class="lake-pill">Epic</span><span class="lake-pill">Stripe</span><span class="lake-pill">Mailchimp</span><span class="lake-pill">Zoho CRM</span><span class="lake-pill">BambooHR</span><span class="lake-pill">RingCentral</span><span class="lake-pill">Atlassian Confluence</span><span class="lake-pill">Copper</span><span class="lake-pill">Adobe Marketo Engage</span><span class="lake-pill">Klaviyo</span><span class="lake-pill">Guru</span><span class="lake-pill">Document360</span><span class="lake-pill">Five9</span><span class="lake-pill">Genesys</span><span class="lake-pill">NiCE</span><span class="lake-pill">Zoom</span><span class="lake-pill">Vonage</span><span class="lake-pill">Dialpad</span><span class="lake-pill">Aircall</span><span class="lake-pill">Workday</span><span class="lake-pill">ADP Workforce Now</span><span class="lake-pill">Tableau</span><span class="lake-pill">Microsoft Power BI</span><span class="lake-pill">Microsoft Dynamics 365</span><span class="lake-pill">Creatio</span><span class="lake-pill">Salesloft</span><span class="lake-pill">Microsoft SharePoint</span><span class="lake-pill">Talkdesk</span><span class="lake-pill">Ujet</span><span class="lake-pill">8x8</span><span class="lake-pill">Gusto</span><span class="lake-pill">Epic</span>
     </div>
   </div>
   <div class="wrap integrations-cta reveal">
@@ -428,6 +436,6 @@
   </div>
 </footer>
 
-<script src="/static/landing.js?v=4" defer></script>
+<script src="/static/landing.js?v=5" defer></script>
 </body>
 </html>

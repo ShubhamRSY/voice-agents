@@ -141,48 +141,12 @@
     });
   });
 
-  // ── Integration floater lake (all 62 names, two opposite rows) ──
-  const namePill = (name) => `<span class="lake-pill">${name}</span>`;
-  const mountMarquee = (id, names) => {
-    const el = document.getElementById(id);
-    if (!el || !names.length) return;
-    el.innerHTML = names.map(namePill).join('');
-  };
-  const initMarquees = () => {
-    $$('.marquee').forEach((track) => {
-      if (track.dataset.cloned) return;
-      track.dataset.cloned = '1';
-      [...track.children].forEach((item) => track.appendChild(item.cloneNode(true)));
-    });
-  };
-  const bootIntegrationLake = async () => {
-    let names = [];
-    try {
-      const res = await fetch('/api/v1/integrations/catalog?tier=native');
-      if (res.ok) {
-        const data = await res.json();
-        names = (data.items || []).map((i) => i.name).filter(Boolean);
-      }
-    } catch (_) { /* offline / demo */ }
-    if (!names.length) {
-      names = [
-        'HubSpot', 'Salesforce', 'Zendesk', 'Freshworks Freshdesk', 'ServiceNow', 'Intercom',
-        'Slack', 'Atlassian Jira', 'Asana', 'Monday.com', 'GitHub', 'Notion', 'Twilio',
-        'WhatsApp', 'Amazon Connect', 'Meta Messenger / Instagram', 'n8n', 'Zapier', 'Pipedrive',
-        'Microsoft Teams', 'Snowflake', 'PagerDuty', 'Linear', 'Google BigQuery', 'Help Scout',
-        'ClickUp', 'Atlassian Trello', 'Front', 'Amplitude', 'Microsoft Azure DevOps', 'Shopify',
-        'Stripe', 'Mailchimp', 'Zoho CRM', 'BambooHR', 'RingCentral', 'Atlassian Confluence',
-        'Copper', 'Adobe Marketo Engage', 'Klaviyo', 'Guru', 'Document360', 'Five9', 'Genesys',
-        'NiCE', 'Zoom', 'Vonage', 'Dialpad', 'Aircall', 'Workday', 'ADP Workforce Now',
-        'Tableau', 'Microsoft Power BI', 'Microsoft Dynamics 365', 'Creatio', 'Salesloft',
-        'Microsoft SharePoint', 'Talkdesk', 'Ujet', '8x8', 'Gusto', 'Epic',
-      ];
-    }
-    const half = Math.ceil(names.length / 2);
-    mountMarquee('logoMarqueeA', names.slice(0, half));
-    mountMarquee('logoMarqueeB', names.slice(half));
-    initMarquees();
-  };
+  // Integration lake: pills are baked into HTML (62 names × 2 rows, duplicated for loop).
+  // JS only pauses on hover — no innerHTML replacement (avoids empty rows if API/cache fails).
+  $$('.marquee').forEach((track) => {
+    track.addEventListener('mouseenter', () => { track.style.animationPlayState = 'paused'; });
+    track.addEventListener('mouseleave', () => { track.style.animationPlayState = ''; });
+  });
 
   // ── Architecture layer explorer ──
   const archDetails = {
@@ -223,6 +187,4 @@
       });
     });
   }
-
-  bootIntegrationLake();
 })();

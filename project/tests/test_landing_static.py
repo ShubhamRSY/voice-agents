@@ -20,7 +20,7 @@ def test_landing_has_deliver_grid_and_integration_lake() -> None:
     assert "integration-lake" in html
     assert "logoMarqueeA" in html
     assert "logoMarqueeB" in html
-    assert "lake-pill" in html
+    assert html.count("lake-pill") >= 124  # 62 names × 2 (duplicated per row)
 
 
 def test_logo_uses_geometric_n_not_font_text() -> None:
