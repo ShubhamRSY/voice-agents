@@ -2,14 +2,21 @@
 # Recover Nexus on the production VM after reboot, OOM, or hung Caddy.
 # Run ON THE SERVER from /opt/nexus/project:
 #   bash scripts/recover-production.sh
+#   SKIP_PULL=1 bash scripts/recover-production.sh   # default — no GHCR pull
+#   SKIP_PULL=0 bash scripts/recover-production.sh   # pull new image (needs free RAM)
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 COMPOSE_FILE="$ROOT/deploy/docker/docker-compose.yml"
 cd "$ROOT"
 
+# On 1GB VMs, docker pull often OOMs / freezes SSH. Source is bind-mounted
+# (./src → /app/src), so git pull + recreate is enough for most releases.
+SKIP_PULL="${SKIP_PULL:-1}"
+
 echo "==> Nexus production recovery"
 echo "    path: $ROOT"
+echo "    SKIP_PULL=$SKIP_PULL"
 
 # 2GB swap helps 1GB VMs survive chat/RAG memory spikes
 if ! swapon --show 2>/dev/null | grep -q .; then
@@ -44,11 +51,20 @@ if sudo ss -tlnp 2>/dev/null | grep -q ':80 '; then
   fi
 fi
 
-echo "==> Pulling latest image (no build on VM)..."
+echo "==> Syncing repo..."
 git pull --ff-only || echo "WARN: git pull failed — continuing with local tree"
-docker compose -f "$COMPOSE_FILE" pull nexus
 
-echo "==> Starting stack..."
+if [[ "$SKIP_PULL" != "1" ]]; then
+  echo "==> Pulling latest nexus image from GHCR..."
+  # Hard timeout so a hung pull cannot freeze the deploy session forever.
+  if ! timeout 180 docker compose -f "$COMPOSE_FILE" pull nexus; then
+    echo "WARN: image pull failed/timed out — recreating with the image already on disk"
+  fi
+else
+  echo "==> Skipping image pull (src/static/config are bind-mounted)"
+fi
+
+echo "==> Starting stack (recreate to apply compose limits + mounts)..."
 docker compose -f "$COMPOSE_FILE" up -d --force-recreate
 
 # If Caddy started while port 80 was busy, it may have no host port mapping.

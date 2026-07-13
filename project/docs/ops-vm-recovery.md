@@ -21,17 +21,27 @@ This script:
 1. Creates/enables **2GB swap** if none exists (reduces OOM freezes on 1GB VMs)
 2. Stops and **disables system Caddy** (avoids port 80 conflict with Docker Caddy)
 3. Sets `GUNICORN_WORKERS=1` for 1GB RAM
-4. `git pull` + `docker compose pull nexus` + `up -d --force-recreate`
+4. `git pull` + recreate stack (**skips GHCR image pull by default** — `docker pull` OOMs 1GB VMs)
 5. Recreates Docker Caddy if ports 80/443 were not mapped
 6. Verifies health inside Nexus and through port 80
 
-Docker Compose now sets **memory limits** per container (Nexus 512m, Postgres 256m, Redis 128m, Caddy 64m).
+To pull a new image (needs free RAM / larger shape):
+
+```bash
+SKIP_PULL=0 bash scripts/recover-production.sh
+```
+
+Docker Compose sets **memory limits** per container (Nexus 512m, Postgres 256m, Redis 128m, Caddy 64m). `src`/`static`/`config` are bind-mounted so `git pull` + recreate applies code without rebuilding.
 
 After recovery, from your Mac:
 
 ```bash
 BASE_URL=https://yournexus.duckdns.org bash scripts/pre-launch-check.sh
 ```
+
+### If SSH times out after a failed CI deploy
+
+`docker compose pull` on a 1GB VM often freezes the host. From **Oracle Cloud Console → Reboot instance**, then SSH and run recovery with `SKIP_PULL=1` (default).
 
 ---
 

@@ -252,14 +252,20 @@ jobs:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
-          timeout: 120s
-          command_timeout: 10m
+          # handshake can be slow on starved 1GB VMs
+          timeout: 180s
+          # avoid hanging forever on docker pull / recreate
+          command_timeout: 8m
           script: |
-            export COMPOSE_FILE=/opt/nexus/project/deploy/docker/docker-compose.yml
-            cd /opt/nexus/project && git pull
-            docker compose pull nexus
-            docker compose up -d --no-deps nexus --force-recreate
-            docker image prune -f
+            set -euo pipefail
+            cd /opt/nexus/project
+            export GUNICORN_WORKERS=1
+            export SKIP_PULL=1
+            # Prefer lightweight recover: git sync + recreate using bind-mounted src.
+            # Full GHCR pull OOMs Oracle Micro (1GB) and times out the SSH session.
+            bash scripts/recover-production.sh
+            curl -sf http://127.0.0.1/api/v1/health | head -c 120
+            echo
 
   publish-staging:
     runs-on: ubuntu-latest
