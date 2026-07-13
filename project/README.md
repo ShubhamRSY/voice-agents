@@ -6,6 +6,8 @@
 
 ### *Every conversation deserves to feel human.*
 
+> **GitHub:** The repo root [`README.md`](../README.md) is the canonical copy for the repository homepage. This file stays in sync for the Python package (`pyproject.toml`).
+
 **Purpose-built AI agents. One CX platform.**
 
 **[Try live demo →](https://yournexus.duckdns.org/landing)** · **[Start free](https://yournexus.duckdns.org/signup)** · **[Plans](https://yournexus.duckdns.org/pricing)** · **[Send enquiry](https://yournexus.duckdns.org/contact)**
@@ -155,6 +157,7 @@ Nexus is organized around a small set of primitives so you can reason about the 
 | **FAQ & pricing** | Upgraded masthead, spaced FAQ, numbered plan limits matching `SAAS_PLANS` |
 | **Static deploy** | Docker volume mount for `/static`; shorter cache on marketing pages |
 | **CI fix** | Valid `setup-python` action SHA; `workflow_dispatch` for manual re-runs |
+| **Hero rotate** | Rotating headline punctuation tracks each word (`Cares.` / `Supports.` etc.) |
 
 ### v2.5.1 — Brand & dark marketing UI (July 2026)
 
