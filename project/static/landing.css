@@ -199,6 +199,10 @@ section{padding:6rem 0}
   background:linear-gradient(135deg,var(--fg),var(--accent-3));
   -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
 }
+.stat-num--static{
+  font-size:clamp(2.25rem,4.5vw,3rem);
+  color:#34d399;-webkit-text-fill-color:#34d399;background:none;
+}
 .stat-label{font-size:.8rem;color:var(--fg-dim);margin-top:.25rem;font-weight:500}
 
 /* ── Bento channels ── */
