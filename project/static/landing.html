@@ -6,8 +6,8 @@
 <title>Nexus — AI Ops Console for Customer Experience</title>
 <meta name="description" content="Nexus Cloud — AI agents for customer experience. Start free. Upgrade for voice, WhatsApp, and 62 integrations.">
 <meta name="theme-color" content="#030014">
-<link rel="preload" href="/static/landing.css?v=7" as="style">
-<link rel="stylesheet" href="/static/landing.css?v=7">
+<link rel="preload" href="/static/landing.css?v=8" as="style">
+<link rel="stylesheet" href="/static/landing.css?v=8">
 <style>
   /* Critical UI — survives cached landing.css */
   #showcase .showcase{display:grid;grid-template-columns:minmax(220px,280px) 1fr;gap:2rem;align-items:stretch}
@@ -413,8 +413,8 @@
       <h2 class="section-title">Built for teams who care</h2>
       <p class="section-sub">Start free on Nexus Cloud — request pricing when you're ready to scale voice, messaging, and enterprise features.</p>
     </div>
-    <div class="deploy-grid">
-      <div class="deploy-card reveal">
+    <div class="deploy-grid" id="deploy-plans">
+      <div class="deploy-card reveal" data-plan="free" tabindex="0" role="button" aria-pressed="false">
         <h3>Start free</h3>
         <div class="deploy-price free">$0 / mo</div>
         <p class="sub">No card · instant workspace</p>
@@ -427,7 +427,7 @@
         </ul>
         <a href="/signup" class="btn btn-ghost pricing-btn">Start free →</a>
       </div>
-      <div class="deploy-card featured reveal reveal-delay-1">
+      <div class="deploy-card featured reveal reveal-delay-1" data-plan="hosted" tabindex="0" role="button" aria-pressed="true">
         <h3>Nexus Cloud</h3>
         <div class="deploy-price accent">Hosted</div>
         <p class="sub">Starter 10 agents · Growth 50 agents</p>
@@ -440,7 +440,7 @@
         </ul>
         <a href="/contact" class="btn btn-primary pricing-btn">Request pricing</a>
       </div>
-      <div class="deploy-card reveal reveal-delay-2">
+      <div class="deploy-card reveal reveal-delay-2" data-plan="enterprise" tabindex="0" role="button" aria-pressed="false">
         <h3>Enterprise</h3>
         <div class="deploy-price warm">Custom</div>
         <p class="sub">Private cloud · SSO · compliance</p>
@@ -483,6 +483,7 @@
   </div>
 </footer>
 
+<script src="/static/plan-cards.js?v=1" defer></script>
 <script src="/static/landing.js?v=6" defer></script>
 </body>
 </html>

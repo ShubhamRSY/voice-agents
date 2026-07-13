@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Nexus — Plans &amp; Enquiries</title>
 <meta name="description" content="Explore Nexus Cloud plans. Request pricing and features tailored to your team.">
-<link rel="stylesheet" href="/static/landing.css?v=7">
+<link rel="stylesheet" href="/static/landing.css?v=8">
 </head>
 <body class="subpage">
 <div class="ambient" aria-hidden="true"><div class="ambient-orb ambient-orb--1"></div><div class="ambient-orb ambient-orb--2"></div></div>
@@ -39,8 +39,8 @@
     <p class="section-sub">Dollar pricing is not listed publicly — <strong>request a quote</strong>. Numbers below match what each plan includes.</p>
   </div>
 
-  <div class="pricing-grid reveal visible">
-    <div class="pricing-card">
+  <div class="pricing-grid reveal visible" id="pricing-plans">
+    <div class="pricing-card" data-plan="free" tabindex="0" role="button" aria-pressed="false">
       <h3>Free</h3>
       <div class="pricing-amount enquire">$0 / mo</div>
       <p class="pricing-sub">Get started at no cost</p>
@@ -53,7 +53,7 @@
       <p class="pricing-locked">Locked: Voice, WhatsApp, SMS, social</p>
       <a href="/signup" class="btn btn-ghost pricing-btn">Start free</a>
     </div>
-    <div class="pricing-card">
+    <div class="pricing-card" data-plan="starter" tabindex="0" role="button" aria-pressed="false">
       <h3>Starter</h3>
       <div class="pricing-amount enquire">Request pricing</div>
       <p class="pricing-sub">Growing CX teams</p>
@@ -66,7 +66,7 @@
       <p class="pricing-locked">Locked: WhatsApp, SMS, social</p>
       <a href="/contact?plan=starter" class="btn btn-ghost pricing-btn">Enquire →</a>
     </div>
-    <div class="pricing-card featured">
+    <div class="pricing-card featured" data-plan="growth" tabindex="0" role="button" aria-pressed="true">
       <h3>Growth</h3>
       <div class="pricing-amount enquire accent">Request pricing</div>
       <p class="pricing-sub">Omnichannel at scale</p>
@@ -78,7 +78,7 @@
       </ul>
       <a href="/contact?plan=growth" class="btn btn-primary pricing-btn">Enquire →</a>
     </div>
-    <div class="pricing-card">
+    <div class="pricing-card" data-plan="enterprise" tabindex="0" role="button" aria-pressed="false">
       <h3>Enterprise</h3>
       <div class="pricing-amount enquire warm">Custom quote</div>
       <p class="pricing-sub">SSO, compliance, private cloud</p>
@@ -107,5 +107,6 @@
     <a href="/contact">Contact</a>
   </div>
 </footer>
+<script src="/static/plan-cards.js?v=1" defer></script>
 </body>
 </html>
